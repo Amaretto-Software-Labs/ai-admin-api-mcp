@@ -1,0 +1,23 @@
+{
+  "name": "ai-admin-api-mcp-workspace",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.29.1",
+  "scripts": {
+    "build": "pnpm -r --sort build",
+    "check": "pnpm build && pnpm -r --sort check",
+    "test": "pnpm build && pnpm -r --sort test",
+    "test:watch": "pnpm -r --parallel test:watch",
+    "test:live:openai": "pnpm --filter @ai-admin-api-mcp/provider-openai test:live",
+    "test:live:anthropic": "pnpm --filter @ai-admin-api-mcp/provider-anthropic test:live",
+    "test:live:google-billing": "echo \"Google Cloud Billing provider is planned; see docs/google-cloud-billing.md\"",
+    "start:stdio": "pnpm --filter ai-admin-api-mcp start:stdio",
+    "start:http": "pnpm --filter ai-admin-api-mcp start:http"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}
