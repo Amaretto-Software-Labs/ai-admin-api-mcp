@@ -8,7 +8,7 @@
 
 Create one standalone, open-source, read-only MCP server:
 
-- `ai-admin-api-mcp`
+- `@amaretto-software-labs/ai-admin-api-mcp`
 
 The server exposes provider-native usage, cost, and administrative reporting metadata through provider modules. Initial modules should cover OpenAI and Anthropic. The architecture must leave room for Google/Gemini, OpenRouter, Azure OpenAI, Bedrock, Vertex AI, and other AI providers whose reporting APIs do not share the same shape.
 
@@ -261,8 +261,9 @@ ai-admin-api-mcp/
     google-cloud-billing.md
 ```
 
-The repository publishes one npm package and one provider-neutral public binary:
+The repository publishes one scoped npm package and one provider-neutral public binary:
 
+- `@amaretto-software-labs/ai-admin-api-mcp`
 - `ai-admin-api-mcp`
 
 ### 6.2 Provider module interface
@@ -366,7 +367,7 @@ Example shape:
 AI_ADMIN_ENABLED_PROVIDERS=openai,anthropic \
 OPENAI_ADMIN_KEY=<admin-api-key> \
 ANTHROPIC_ADMIN_KEY=sk-ant-admin... \
-npx ai-admin-api-mcp --stdio
+npx @amaretto-software-labs/ai-admin-api-mcp --stdio
 ```
 
 ### 7.2 Single-tenant Streamable HTTP
@@ -380,7 +381,7 @@ AI_ADMIN_ENABLED_PROVIDERS=openai,anthropic \
 OPENAI_ADMIN_KEY=<admin-api-key> \
 ANTHROPIC_ADMIN_KEY=sk-ant-admin... \
 MCP_HTTP_AUTH_TOKEN=local-proxy-token \
-npx ai-admin-api-mcp --http --port 8787
+npx @amaretto-software-labs/ai-admin-api-mcp --http --port 8787
 ```
 
 The MCP HTTP endpoint should require an inbound bearer token unless explicitly started with an unsafe local-only mode. The inbound MCP bearer token protects the MCP server. Upstream provider credentials remain in server environment or secret storage.

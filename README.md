@@ -201,6 +201,6 @@ Inputs:
 
 - `package-version`: optional SemVer override. If omitted, the workflow uses the committed package version.
 - `npm-tag`: npm dist-tag to use when publishing. Defaults to `latest`.
-- `publish-to-npm`: set to `true` to publish `ai-admin-api-mcp` to npm after the release is created.
+- `publish-to-npm`: set to `true` to publish `@amaretto-software-labs/ai-admin-api-mcp` to npm after the release is created.
 
-The release job aligns the `ai-admin-api-mcp` package version in the runner, rebuilds and tests the package, packs one npm tarball, pushes a `v<package-version>` git tag, creates a GitHub Release with the packed artifact, and optionally publishes `ai-admin-api-mcp` to npm using trusted publishing. Configure npm trusted publishing for this repository and package before enabling `publish-to-npm`.
+The release job aligns the `@amaretto-software-labs/ai-admin-api-mcp` package version in the runner, rebuilds and tests the package, packs one npm tarball, pushes a `v<package-version>` git tag, creates a GitHub Release with the packed artifact, and optionally publishes `@amaretto-software-labs/ai-admin-api-mcp` to npm using trusted publishing. Configure npm trusted publishing for this repository and package before enabling `publish-to-npm`.

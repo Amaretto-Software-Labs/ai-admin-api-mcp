@@ -179,4 +179,4 @@ jobs:
             echo "OIDC token request environment is missing. Check job permissions (id-token: write)." >&2
             exit 1
           fi
-          npm publish --provenance --tag "$NPM_TAG"
+          npm publish --provenance --access public --tag "$NPM_TAG"
