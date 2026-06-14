@@ -26,6 +26,22 @@ All MCP tools are read-only. The server does not expose provider mutation tools.
 
 ## Quick Start
 
+Run the published package with `npx`:
+
+```sh
+OPENAI_ADMIN_KEY=sk-admin-... \
+ANTHROPIC_ADMIN_KEY=sk-ant-admin-... \
+npx @amaretto-software-labs/ai-admin-api-mcp --stdio
+```
+
+Pin a specific published version:
+
+```sh
+npx @amaretto-software-labs/ai-admin-api-mcp@0.0.1 --stdio
+```
+
+For local repo development:
+
 ```sh
 pnpm install
 pnpm check
@@ -63,6 +79,22 @@ pnpm start:https
 ```
 
 HTTPS listens on `https://127.0.0.1:8787/mcp`.
+
+Use the published package for Streamable HTTP or HTTPS by passing the same flags to `npx`:
+
+```sh
+MCP_HTTP_AUTH_TOKEN=local-proxy-token \
+OPENAI_ADMIN_KEY=sk-admin-... \
+npx @amaretto-software-labs/ai-admin-api-mcp --http --port 8787
+```
+
+```sh
+MCP_HTTP_AUTH_TOKEN=local-proxy-token \
+OPENAI_ADMIN_KEY=sk-admin-... \
+MCP_HTTPS_CERT_PATH=/path/to/localhost.pem \
+MCP_HTTPS_KEY_PATH=/path/to/localhost.key \
+npx @amaretto-software-labs/ai-admin-api-mcp --https --port 8787
+```
 
 ## Configuration
 
