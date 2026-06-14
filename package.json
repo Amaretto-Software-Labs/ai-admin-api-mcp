@@ -1,6 +1,6 @@
 {
   "name": "@amaretto-software-labs/ai-admin-api-mcp",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -14,7 +14,7 @@
   },
   "homepage": "https://github.com/Amaretto-Software-Labs/ai-admin-api-mcp#readme",
   "bin": {
-    "ai-admin-api-mcp": "./dist/cli.js"
+    "ai-admin-api-mcp": "dist/cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
