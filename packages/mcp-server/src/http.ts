@@ -1,14 +1,29 @@
 import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { safeErrorMessage } from "@ai-admin-api-mcp/core";
-import type { IncomingMessage, ServerResponse } from "node:http";
+import { readFileSync } from "node:fs";
+import type { IncomingMessage, Server as NodeHttpServer, ServerResponse } from "node:http";
+import { createServer as createHttpsServer, type ServerOptions as HttpsServerOptions } from "node:https";
 import type { ServerConfig } from "./config.js";
 import { createProviderRegistry } from "./providers.js";
 import { createAiAdminServer } from "./server.js";
 
+type McpRequest = IncomingMessage & { body?: unknown };
+type JsonResponse = ServerResponse & {
+  status: (code: number) => { json: (body: unknown) => void };
+  json: (body: unknown) => void;
+};
+
+export interface TlsFileOptions {
+  certPath: string;
+  keyPath: string;
+}
+
 export interface HttpServerOptions {
   config: ServerConfig;
   port: number;
+  host?: string;
+  tls?: TlsFileOptions;
   unsafeLocalHttp?: boolean;
 }
 
@@ -22,11 +37,10 @@ export interface StartedHttpServer {
 export function startHttpServer(options: HttpServerOptions): StartedHttpServer {
   const app = createMcpExpressApp();
   const registry = createProviderRegistry(options.config);
+  const host = options.host ?? "127.0.0.1";
+  const scheme = options.tls === undefined ? "http" : "https";
 
-  app.post("/mcp", async (req: IncomingMessage & { body?: unknown }, res: ServerResponse & {
-    status: (code: number) => { json: (body: unknown) => void };
-    json: (body: unknown) => void;
-  }) => {
+  const handleMcpRequest = async (req: McpRequest, res: JsonResponse) => {
     if (!isAuthorized(req.headers.authorization, options.config, options.unsafeLocalHttp ?? false)) {
       res.status(401).json({ error: "missing_or_invalid_bearer_token" });
       return;
@@ -53,17 +67,15 @@ export function startHttpServer(options: HttpServerOptions): StartedHttpServer {
         });
       }
     }
-  });
+  };
 
-  app.get("/mcp", (_req: IncomingMessage, res: ServerResponse & { status: (code: number) => { json: (body: unknown) => void } }) => {
-    res.status(405).json({ error: "method_not_allowed" });
-  });
+  app.post("/mcp", handleMcpRequest);
+  app.get("/mcp", handleMcpRequest);
+  app.delete("/mcp", handleMcpRequest);
 
-  app.delete("/mcp", (_req: IncomingMessage, res: ServerResponse & { status: (code: number) => { json: (body: unknown) => void } }) => {
-    res.status(405).json({ error: "method_not_allowed" });
-  });
-
-  const listener = app.listen(options.port, "127.0.0.1");
+  const listener: NodeHttpServer = options.tls === undefined
+    ? app.listen(options.port, host)
+    : createHttpsServer(loadTlsOptions(options.tls), app as never).listen(options.port, host);
   const ready = listener.listening
     ? Promise.resolve()
     : new Promise<void>((resolve, reject) => {
@@ -80,12 +92,19 @@ export function startHttpServer(options: HttpServerOptions): StartedHttpServer {
     },
     ready,
     get url() {
-      return `http://127.0.0.1:${port()}/mcp`;
+      return `${scheme}://${host}:${port()}/mcp`;
     },
     close: () =>
       new Promise((resolve, reject) => {
         listener.close((error: Error | undefined) => (error ? reject(error) : resolve()));
       }),
+  };
+}
+
+function loadTlsOptions(options: TlsFileOptions): HttpsServerOptions {
+  return {
+    cert: readFileSync(options.certPath),
+    key: readFileSync(options.keyPath),
   };
 }
 

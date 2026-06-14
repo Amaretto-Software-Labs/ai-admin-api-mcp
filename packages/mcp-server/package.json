@@ -26,7 +26,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "start:stdio": "tsx src/cli.ts --stdio",
-    "start:http": "tsx src/cli.ts --http --port 8787"
+    "start:http": "tsx src/cli.ts --http --port 8787",
+    "start:https": "tsx src/cli.ts --https --port 8787"
   },
   "dependencies": {
     "@ai-admin-api-mcp/core": "workspace:*",

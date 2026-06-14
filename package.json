@@ -12,7 +12,8 @@
     "test:live:anthropic": "pnpm --filter @ai-admin-api-mcp/provider-anthropic test:live",
     "test:live:google-billing": "echo \"Google Cloud Billing provider is planned; see docs/google-cloud-billing.md\"",
     "start:stdio": "pnpm --filter ai-admin-api-mcp start:stdio",
-    "start:http": "pnpm --filter ai-admin-api-mcp start:http"
+    "start:http": "pnpm --filter ai-admin-api-mcp start:http",
+    "start:https": "pnpm --filter ai-admin-api-mcp start:https"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

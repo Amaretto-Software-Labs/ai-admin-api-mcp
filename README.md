@@ -51,6 +51,19 @@ pnpm start:http
 
 HTTP listens on `http://127.0.0.1:8787/mcp`. Pass `--unsafe-local-http` only for local development where another process already protects the endpoint.
 
+Run the gateway-compatible local HTTPS endpoint with a local development certificate:
+
+```sh
+OPENAI_ADMIN_KEY=sk-admin-... \
+ANTHROPIC_ADMIN_KEY=sk-ant-admin-... \
+MCP_HTTP_AUTH_TOKEN=local-proxy-token \
+MCP_HTTPS_CERT_PATH=/path/to/localhost.pem \
+MCP_HTTPS_KEY_PATH=/path/to/localhost.key \
+pnpm start:https
+```
+
+HTTPS listens on `https://127.0.0.1:8787/mcp`.
+
 ## Configuration
 
 | Variable | Required | Description |
@@ -66,6 +79,8 @@ HTTP listens on `http://127.0.0.1:8787/mcp`. Pass `--unsafe-local-http` only for
 | `ANTHROPIC_VERSION` | No | Anthropic API version. Defaults to `2023-06-01`. |
 | `ANTHROPIC_BETA` | No | Comma-separated Anthropic beta headers, for example `fast-mode-2026-02-01`. |
 | `MCP_HTTP_AUTH_TOKEN` | HTTP mode | Bearer token required by the MCP HTTP endpoint unless unsafe local mode is used. |
+| `MCP_HTTPS_CERT_PATH` | HTTPS mode | PEM certificate path for local HTTPS. |
+| `MCP_HTTPS_KEY_PATH` | HTTPS mode | PEM private-key path for local HTTPS. |
 | `MCP_CACHE_TTL_SECONDS` | No | Dashboard bundle cache TTL in seconds. Metadata list tools cache for 300 seconds. Defaults to `60`. |
 | `MCP_USER_AGENT` | No | Optional user agent context for future outbound request metadata. |
 

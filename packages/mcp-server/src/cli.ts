@@ -8,6 +8,8 @@ import { createAiAdminServer } from "./server.js";
 interface CliArgs {
   mode: "stdio" | "http";
   port: number;
+  tlsCertPath?: string;
+  tlsKeyPath?: string;
   unsafeLocalHttp: boolean;
 }
 
@@ -22,18 +24,25 @@ async function main(): Promise<void> {
     return;
   }
 
-  startHttpServer({
+  const listener = startHttpServer({
     config,
     port: args.port,
+    ...(args.tlsCertPath === undefined || args.tlsKeyPath === undefined
+      ? {}
+      : { tls: { certPath: args.tlsCertPath, keyPath: args.tlsKeyPath } }),
     unsafeLocalHttp: args.unsafeLocalHttp,
   });
-  console.error(`ai-admin-api-mcp listening on http://127.0.0.1:${args.port}/mcp`);
+  await listener.ready;
+  console.error(`ai-admin-api-mcp listening on ${listener.url}`);
 }
 
 function parseArgs(argv: string[]): CliArgs {
   let mode: "stdio" | "http" = "stdio";
   let port = 8787;
   let unsafeLocalHttp = false;
+  let tlsCertPath = optionalString(process.env.MCP_HTTPS_CERT_PATH);
+  let tlsKeyPath = optionalString(process.env.MCP_HTTPS_KEY_PATH);
+  let wantsHttps = tlsCertPath !== undefined || tlsKeyPath !== undefined;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -41,10 +50,27 @@ function parseArgs(argv: string[]): CliArgs {
       mode = "stdio";
     } else if (arg === "--http") {
       mode = "http";
+    } else if (arg === "--https") {
+      mode = "http";
+      wantsHttps = true;
     } else if (arg === "--port") {
       const next = argv[index + 1];
       if (next !== undefined) {
         port = parsePort(next);
+        index += 1;
+      }
+    } else if (arg === "--tls-cert") {
+      const next = argv[index + 1];
+      if (next !== undefined) {
+        tlsCertPath = next;
+        wantsHttps = true;
+        index += 1;
+      }
+    } else if (arg === "--tls-key") {
+      const next = argv[index + 1];
+      if (next !== undefined) {
+        tlsKeyPath = next;
+        wantsHttps = true;
         index += 1;
       }
     } else if (arg === "--unsafe-local-http") {
@@ -55,7 +81,17 @@ function parseArgs(argv: string[]): CliArgs {
     }
   }
 
-  return { mode, port, unsafeLocalHttp };
+  if (wantsHttps && (tlsCertPath === undefined || tlsKeyPath === undefined)) {
+    throw new AiAdminError("configuration_error", "HTTPS mode requires --tls-cert and --tls-key, or MCP_HTTPS_CERT_PATH and MCP_HTTPS_KEY_PATH");
+  }
+
+  return {
+    mode,
+    port,
+    ...(tlsCertPath === undefined ? {} : { tlsCertPath }),
+    ...(tlsKeyPath === undefined ? {} : { tlsKeyPath }),
+    unsafeLocalHttp,
+  };
 }
 
 function parsePort(value: string): number {
@@ -66,18 +102,29 @@ function parsePort(value: string): number {
   return parsed;
 }
 
+function optionalString(value: string | undefined): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed === "" ? undefined : trimmed;
+}
+
 function printHelp(): void {
   console.log(`ai-admin-api-mcp
 
 Usage:
   ai-admin-api-mcp --stdio
   ai-admin-api-mcp --http --port 8787
+  ai-admin-api-mcp --https --port 8787 --tls-cert ./dev.pem --tls-key ./dev.key
 
 Environment:
   AI_ADMIN_ENABLED_PROVIDERS=openai,anthropic
   OPENAI_ADMIN_KEY=...
   ANTHROPIC_ADMIN_KEY=...
   MCP_HTTP_AUTH_TOKEN=...
+  MCP_HTTPS_CERT_PATH=...
+  MCP_HTTPS_KEY_PATH=...
 `);
 }
 

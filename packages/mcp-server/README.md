@@ -21,4 +21,14 @@ OPENAI_ADMIN_KEY=sk-admin-... \
 ai-admin-api-mcp --http --port 8787
 ```
 
+Run over local HTTPS:
+
+```sh
+MCP_HTTP_AUTH_TOKEN=local-token \
+OPENAI_ADMIN_KEY=sk-admin-... \
+ai-admin-api-mcp --https --port 8787 \
+  --tls-cert /path/to/localhost.pem \
+  --tls-key /path/to/localhost.key
+```
+
 See the repository README for full configuration, provider caveats, and gateway deployment notes.

@@ -102,20 +102,23 @@ describe("MCP server", () => {
           expect.objectContaining({ provider: "google-cloud-billing", status: "planned" }),
         ]));
 
+        const openAiCallResult = await client.callTool({
+          name: "openai_admin_query_usage",
+          arguments: {
+            usage_endpoint: "images",
+            start: "2026-06-01T00:00:00Z",
+            end: "2026-06-02T00:00:00Z",
+            group_by: ["project_id", "model"],
+            endpoint_params: { project_ids: ["proj_mcp"] },
+          },
+        });
         const openAiResult = parseToolJson<{ data: { usage: Array<{ metrics: { image_count: number | null } }> } }>(
-          await client.callTool({
-            name: "openai_admin_query_usage",
-            arguments: {
-              usage_endpoint: "images",
-              start: "2026-06-01T00:00:00Z",
-              end: "2026-06-02T00:00:00Z",
-              group_by: ["project_id", "model"],
-              endpoint_params: { project_ids: ["proj_mcp"] },
-            },
-          }),
+          openAiCallResult,
         );
 
         expect(openAiResult.data.usage[0]?.metrics.image_count).toBe(3);
+        expect(JSON.stringify((openAiCallResult as { content?: unknown }).content)).toContain("structuredContent");
+        expect(JSON.stringify((openAiCallResult as { content?: unknown }).content)).not.toContain("image_count");
 
         const anthropicResult = parseToolJson<{ data: { usage: Array<{ metrics: { input_tokens: number | null; output_tokens: number | null } }> } }>(
           await client.callTool({
@@ -188,8 +191,12 @@ function sendJson(response: ServerResponse, status: number, body: unknown): void
 }
 
 function parseToolJson<T>(result: unknown): T {
-  const toolResult = result as { isError?: boolean; content?: unknown };
+  const toolResult = result as { isError?: boolean; content?: unknown; structuredContent?: unknown };
   expect(toolResult.isError).not.toBe(true);
+  if (toolResult.structuredContent !== undefined) {
+    return toolResult.structuredContent as T;
+  }
+
   expect(Array.isArray(toolResult.content)).toBe(true);
   const content = (toolResult.content as unknown[])[0] as { type?: unknown; text?: unknown } | undefined;
   expect(content?.type).toBe("text");
