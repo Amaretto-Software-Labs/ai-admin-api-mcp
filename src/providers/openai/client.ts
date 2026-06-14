@@ -1,4 +1,4 @@
-import { getJson, type ProviderCredential } from "@ai-admin-api-mcp/core";
+import { getJson, type ProviderCredential } from "../../core/index.js";
 import type { OpenAiConfig, OpenAiCostResult, OpenAiPage, OpenAiUsageResult } from "./types.js";
 
 export class OpenAiAdminClient {

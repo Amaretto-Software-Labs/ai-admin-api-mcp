@@ -14,7 +14,7 @@ import {
   type ProviderCapability,
   type QueryContext,
   type ToolEnvelope,
-} from "@ai-admin-api-mcp/core";
+} from "../../core/index.js";
 import {
   ANTHROPIC_COST_GROUP_BY,
   ANTHROPIC_MESSAGES_FILTERS,

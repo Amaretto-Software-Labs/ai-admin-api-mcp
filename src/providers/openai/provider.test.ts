@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { CredentialResolver } from "@ai-admin-api-mcp/core";
-import { AiAdminError } from "@ai-admin-api-mcp/core";
+import type { CredentialResolver } from "../../core/index.js";
+import { AiAdminError } from "../../core/index.js";
 import { OpenAiProvider } from "./provider.js";
 
 const credentialResolver: CredentialResolver = {

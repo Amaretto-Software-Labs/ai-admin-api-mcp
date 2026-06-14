@@ -1,6 +1,6 @@
-import type { ProviderCapability, Warning } from "@ai-admin-api-mcp/core";
-import { AnthropicProvider } from "@ai-admin-api-mcp/provider-anthropic";
-import { OpenAiProvider } from "@ai-admin-api-mcp/provider-openai";
+import type { ProviderCapability, Warning } from "./core/index.js";
+import { AnthropicProvider } from "./providers/anthropic/index.js";
+import { OpenAiProvider } from "./providers/openai/index.js";
 import type { ServerConfig } from "./config.js";
 
 export interface ProviderRegistry {

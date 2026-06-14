@@ -1,4 +1,4 @@
-import { AiAdminError, type CredentialRequest, type CredentialResolver, type ProviderCredential } from "@ai-admin-api-mcp/core";
+import { AiAdminError, type CredentialRequest, type CredentialResolver, type ProviderCredential } from "./core/index.js";
 import type { ServerConfig } from "./config.js";
 
 const STATIC_REFS = {

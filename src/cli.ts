@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { AiAdminError, safeErrorMessage } from "@ai-admin-api-mcp/core";
+import { AiAdminError, safeErrorMessage } from "./core/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { loadConfig, ensureRequiredProviders } from "./config.js";
 import { startHttpServer } from "./http.js";

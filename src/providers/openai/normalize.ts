@@ -6,7 +6,7 @@ import {
   redactValue,
   type CostFact,
   type UsageFact,
-} from "@ai-admin-api-mcp/core";
+} from "../../core/index.js";
 import type { OpenAiCostResult, OpenAiPage, OpenAiUsageResult } from "./types.js";
 import type { OpenAiUsageEndpoint } from "./capabilities.js";
 

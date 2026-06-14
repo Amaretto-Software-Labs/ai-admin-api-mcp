@@ -1,4 +1,4 @@
-import type { BucketWidth, CostFact, PaginationInfo, TimeRange, UsageFact } from "@ai-admin-api-mcp/core";
+import type { BucketWidth, CostFact, PaginationInfo, TimeRange, UsageFact } from "../../core/index.js";
 import type { OpenAiUsageEndpoint } from "./capabilities.js";
 
 export interface OpenAiConfig {

@@ -1,19 +1,49 @@
 {
-  "name": "ai-admin-api-mcp-workspace",
-  "private": true,
+  "name": "ai-admin-api-mcp",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@10.29.1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Amaretto-Software-Labs/ai-admin-api-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Amaretto-Software-Labs/ai-admin-api-mcp/issues"
+  },
+  "homepage": "https://github.com/Amaretto-Software-Labs/ai-admin-api-mcp#readme",
+  "bin": {
+    "ai-admin-api-mcp": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "README.md",
+    "dist",
+    "!dist/**/*.test.*"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "build": "pnpm -r --sort build",
-    "check": "pnpm build && pnpm -r --sort check",
-    "test": "pnpm build && pnpm -r --sort test",
-    "test:watch": "pnpm -r --parallel test:watch",
-    "test:live:openai": "pnpm --filter @ai-admin-api-mcp/provider-openai test:live",
-    "test:live:anthropic": "pnpm --filter @ai-admin-api-mcp/provider-anthropic test:live",
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:live:openai": "vitest run src/providers/openai/live.test.ts",
+    "test:live:anthropic": "vitest run src/providers/anthropic/live.test.ts",
     "test:live:google-billing": "echo \"Google Cloud Billing provider is planned; see docs/google-cloud-billing.md\"",
-    "start:stdio": "pnpm --filter ai-admin-api-mcp start:stdio",
-    "start:http": "pnpm --filter ai-admin-api-mcp start:http",
-    "start:https": "pnpm --filter ai-admin-api-mcp start:https"
+    "start:stdio": "tsx src/cli.ts --stdio",
+    "start:http": "tsx src/cli.ts --http --port 8787",
+    "start:https": "tsx src/cli.ts --https --port 8787"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

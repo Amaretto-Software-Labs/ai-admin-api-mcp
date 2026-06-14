@@ -1,4 +1,4 @@
-import { AiAdminError, type ImplementedProviderId } from "@ai-admin-api-mcp/core";
+import { AiAdminError, type ImplementedProviderId } from "./core/index.js";
 
 export type CredentialMode = "static" | "pass_through" | "hybrid";
 

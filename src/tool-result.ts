@@ -1,4 +1,4 @@
-import { toAiAdminError } from "@ai-admin-api-mcp/core";
+import { toAiAdminError } from "./core/index.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export function jsonToolResult(value: unknown): CallToolResult {

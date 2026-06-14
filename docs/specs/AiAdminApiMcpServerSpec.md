@@ -246,9 +246,8 @@ Recommended open-source layout:
 
 ```text
 ai-admin-api-mcp/
-  packages/
-    admin-usage-core/
-    mcp-server/
+  src/
+    core/
     providers/
       openai/
       anthropic/
@@ -262,7 +261,7 @@ ai-admin-api-mcp/
     google-cloud-billing.md
 ```
 
-Final package names can change before publish, but the public binary should be provider-neutral:
+The repository publishes one npm package and one provider-neutral public binary:
 
 - `ai-admin-api-mcp`
 
@@ -1527,11 +1526,9 @@ Versioning:
 
 ## 21. Open Questions
 
-1. What open-source organization and npm scope should own the packages?
-2. Should provider modules live in the same package or be dynamically loaded plugin packages?
-3. Should Anthropic Claude Code Analytics be an optional Anthropic tool or a separate module?
-4. Should Google Cloud Billing ship in the first public release or wait for v1.1/v2 after a BigQuery cost-safety review?
-5. Should hosted operators use encrypted credential envelopes, broker tokens, or both?
-6. Should dashboard bundles include CSV strings, or should CSV export be left to client-side rendering?
-7. What metadata enrichment should be included in v1 versus left to provider-specific tools?
-8. What minimum gateway/broker contract should the OSS server document without owning a full hosted product?
+1. Should Anthropic Claude Code Analytics be an optional Anthropic tool or a separate module?
+2. Should Google Cloud Billing ship in the first public release or wait for v1.1/v2 after a BigQuery cost-safety review?
+3. Should hosted operators use encrypted credential envelopes, broker tokens, or both?
+4. Should dashboard bundles include CSV strings, or should CSV export be left to client-side rendering?
+5. What metadata enrichment should be included in v1 versus left to provider-specific tools?
+6. What minimum gateway/broker contract should the OSS server document without owning a full hosted product?

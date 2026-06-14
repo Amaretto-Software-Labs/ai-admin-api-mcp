@@ -1,9 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import * as z from "zod/v4";
-import { envelope, lastCompleteDaysRange, safeErrorMessage, type ImplementedProviderId, type QueryContext, type Warning } from "@ai-admin-api-mcp/core";
-import type { AnthropicCostsInput, AnthropicMessagesUsageInput } from "@ai-admin-api-mcp/provider-anthropic";
-import type { OpenAiQueryCostsInput, OpenAiQueryUsageInput } from "@ai-admin-api-mcp/provider-openai";
+import { envelope, lastCompleteDaysRange, safeErrorMessage, type ImplementedProviderId, type QueryContext, type Warning } from "./core/index.js";
+import type { AnthropicCostsInput, AnthropicMessagesUsageInput } from "./providers/anthropic/index.js";
+import type { OpenAiQueryCostsInput, OpenAiQueryUsageInput } from "./providers/openai/index.js";
 import { ensureSupportedCredentialMode, type ServerConfig } from "./config.js";
 import { StaticCredentialResolver } from "./credentials.js";
 import { createProviderRegistry, type ProviderRegistry } from "./providers.js";

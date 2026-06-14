@@ -1,4 +1,4 @@
-import { baseDimensions, baseUsageMetrics, money, redactValue, warning, type CostFact, type UsageFact } from "@ai-admin-api-mcp/core";
+import { baseDimensions, baseUsageMetrics, money, redactValue, warning, type CostFact, type UsageFact } from "../../core/index.js";
 import type { AnthropicCostResult, AnthropicPage, AnthropicUsageResult } from "./types.js";
 
 export function normalizeAnthropicUsagePage(page: AnthropicPage<AnthropicUsageResult>): UsageFact[] {

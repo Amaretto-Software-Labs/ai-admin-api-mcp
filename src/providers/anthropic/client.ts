@@ -1,4 +1,4 @@
-import { getJson, type ProviderCredential } from "@ai-admin-api-mcp/core";
+import { getJson, type ProviderCredential } from "../../core/index.js";
 import type { AnthropicConfig, AnthropicCostResult, AnthropicPage, AnthropicUsageResult } from "./types.js";
 
 export class AnthropicAdminClient {

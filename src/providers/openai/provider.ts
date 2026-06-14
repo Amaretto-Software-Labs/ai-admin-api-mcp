@@ -14,7 +14,7 @@ import {
   type ProviderCapability,
   type QueryContext,
   type ToolEnvelope,
-} from "@ai-admin-api-mcp/core";
+} from "../../core/index.js";
 import { OPENAI_COST_GROUP_BY, OPENAI_USAGE_CAPABILITIES, OPENAI_USAGE_ENDPOINTS, type OpenAiUsageEndpoint } from "./capabilities.js";
 import { OpenAiAdminClient } from "./client.js";
 import { normalizeOpenAiCostPage, normalizeOpenAiUsagePage } from "./normalize.js";

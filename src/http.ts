@@ -1,6 +1,6 @@
 import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { safeErrorMessage } from "@ai-admin-api-mcp/core";
+import { safeErrorMessage } from "./core/index.js";
 import { readFileSync } from "node:fs";
 import type { IncomingMessage, Server as NodeHttpServer, ServerResponse } from "node:http";
 import { createServer as createHttpsServer, type ServerOptions as HttpsServerOptions } from "node:https";

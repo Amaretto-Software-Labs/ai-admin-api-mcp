@@ -7,6 +7,13 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.29.0
+        version: 1.29.0(zod@3.25.76)
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
@@ -20,48 +27,6 @@ importers:
       vitest:
         specifier: ^3.2.0
         version: 3.2.6(@types/node@24.13.2)(tsx@4.22.4)
-
-  packages/core:
-    dependencies:
-      zod:
-        specifier: ^3.25.0
-        version: 3.25.76
-
-  packages/mcp-server:
-    dependencies:
-      '@ai-admin-api-mcp/core':
-        specifier: workspace:*
-        version: link:../core
-      '@ai-admin-api-mcp/provider-anthropic':
-        specifier: workspace:*
-        version: link:../providers/anthropic
-      '@ai-admin-api-mcp/provider-openai':
-        specifier: workspace:*
-        version: link:../providers/openai
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.29.0
-        version: 1.29.0(zod@3.25.76)
-      zod:
-        specifier: ^3.25.0
-        version: 3.25.76
-
-  packages/providers/anthropic:
-    dependencies:
-      '@ai-admin-api-mcp/core':
-        specifier: workspace:*
-        version: link:../../core
-      zod:
-        specifier: ^3.25.0
-        version: 3.25.76
-
-  packages/providers/openai:
-    dependencies:
-      '@ai-admin-api-mcp/core':
-        specifier: workspace:*
-        version: link:../../core
-      zod:
-        specifier: ^3.25.0
-        version: 3.25.76
 
 packages:
 

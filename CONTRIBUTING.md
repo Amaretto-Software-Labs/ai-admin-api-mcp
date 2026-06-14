@@ -2,7 +2,7 @@
 
 ## Development
 
-Use pnpm workspaces:
+Use pnpm:
 
 ```sh
 pnpm install
@@ -10,7 +10,7 @@ pnpm check
 pnpm test
 ```
 
-Provider packages should stay independent of MCP transport details. The MCP server package owns tool registration, credential resolution, and transport setup. The core package owns shared normalization types, redaction, pagination, errors, and HTTP helpers.
+Provider modules should stay independent of MCP transport details. The MCP server owns tool registration, credential resolution, and transport setup. Shared normalization types, redaction, pagination, errors, and HTTP helpers live under `src/core`.
 
 ## Provider Changes
 

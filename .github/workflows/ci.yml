@@ -19,7 +19,7 @@ on:
         default: latest
         type: string
       publish-to-npm:
-        description: Publish npm packages using npm trusted publishing.
+        description: Publish the npm package using npm trusted publishing.
         required: false
         default: false
         type: boolean
@@ -55,6 +55,9 @@ jobs:
 
       - name: Type-check
         run: pnpm check
+
+      - name: Build package
+        run: pnpm build
 
       - name: Test
         run: pnpm test
@@ -109,7 +112,7 @@ jobs:
           if [ -n "${{ github.event.inputs.package-version }}" ]; then
             PACKAGE_VERSION="${{ github.event.inputs.package-version }}"
           else
-            PACKAGE_VERSION=$(node -p "JSON.parse(require('node:fs').readFileSync('packages/mcp-server/package.json', 'utf8')).version")
+            PACKAGE_VERSION=$(node -p "JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).version")
           fi
           case "$PACKAGE_VERSION" in
             *[!0-9A-Za-z.+-]* | "" | *..* | .* | *.)
@@ -129,25 +132,18 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Build packages
+      - name: Build package
         run: pnpm build
 
       - name: Pack npm artifacts
         run: |
           mkdir -p artifacts
-          for package_dir in \
-            packages/core \
-            packages/providers/openai \
-            packages/providers/anthropic \
-            packages/mcp-server
-          do
-            (cd "$package_dir" && npm pack --pack-destination "$GITHUB_WORKSPACE/artifacts")
-          done
+          npm pack --pack-destination "$GITHUB_WORKSPACE/artifacts"
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: npm-packages-${{ steps.release-version.outputs.package-version }}
+          name: npm-package-${{ steps.release-version.outputs.package-version }}
           path: artifacts/*.tgz
 
       - name: Create version tag
@@ -172,7 +168,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish packages to npm
+      - name: Publish package to npm
         if: github.event.inputs.publish-to-npm == 'true'
         env:
           NPM_TAG: ${{ github.event.inputs.npm-tag }}
@@ -183,16 +179,4 @@ jobs:
             echo "OIDC token request environment is missing. Check job permissions (id-token: write)." >&2
             exit 1
           fi
-          publish_package() {
-            package_dir="$1"
-            package_name=$(node -p "JSON.parse(require('node:fs').readFileSync('${package_dir}/package.json', 'utf8')).name")
-            if [[ "$package_name" == @* ]]; then
-              (cd "$package_dir" && npm publish --provenance --access public --tag "$NPM_TAG")
-            else
-              (cd "$package_dir" && npm publish --provenance --tag "$NPM_TAG")
-            fi
-          }
-          publish_package packages/core
-          publish_package packages/providers/openai
-          publish_package packages/providers/anthropic
-          publish_package packages/mcp-server
+          npm publish --provenance --tag "$NPM_TAG"

@@ -19,7 +19,7 @@ All MCP tools are read-only. The server does not expose provider mutation tools.
 
 - Node.js 22+
 - TypeScript
-- pnpm workspaces
+- pnpm
 - `@modelcontextprotocol/sdk`
 - Zod input schemas
 - Vitest
@@ -199,8 +199,8 @@ Releases are manual through **Actions -> Build and Publish -> Run workflow** on 
 
 Inputs:
 
-- `package-version`: optional SemVer override. If omitted, the workflow uses the committed MCP server package version.
+- `package-version`: optional SemVer override. If omitted, the workflow uses the committed package version.
 - `npm-tag`: npm dist-tag to use when publishing. Defaults to `latest`.
-- `publish-to-npm`: set to `true` to publish packages to npm after the release is created.
+- `publish-to-npm`: set to `true` to publish `ai-admin-api-mcp` to npm after the release is created.
 
-The release job aligns all publishable package versions in the runner, rebuilds and tests the workspace, packs npm tarballs, pushes a `v<package-version>` git tag, creates a GitHub Release with the packed artifacts, and optionally publishes packages to npm using trusted publishing. Configure npm trusted publishing for this repository before enabling `publish-to-npm`.
+The release job aligns the `ai-admin-api-mcp` package version in the runner, rebuilds and tests the package, packs one npm tarball, pushes a `v<package-version>` git tag, creates a GitHub Release with the packed artifact, and optionally publishes `ai-admin-api-mcp` to npm using trusted publishing. Configure npm trusted publishing for this repository and package before enabling `publish-to-npm`.

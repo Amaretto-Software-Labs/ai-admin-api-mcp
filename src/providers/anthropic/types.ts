@@ -1,4 +1,4 @@
-import type { BucketWidth, CostFact, PaginationInfo, UsageFact } from "@ai-admin-api-mcp/core";
+import type { BucketWidth, CostFact, PaginationInfo, UsageFact } from "../../core/index.js";
 
 export interface AnthropicConfig {
   adminKey?: string;
