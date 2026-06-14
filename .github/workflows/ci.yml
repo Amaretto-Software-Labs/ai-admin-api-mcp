@@ -1,4 +1,4 @@
-name: CI
+name: Build and Publish
 
 on:
   push:
@@ -7,13 +7,31 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      package-version:
+        description: Optional SemVer override. Defaults to the committed package version.
+        required: false
+        type: string
+      npm-tag:
+        description: npm dist-tag to publish under.
+        required: false
+        default: latest
+        type: string
+      publish-to-npm:
+        description: Publish npm packages using npm trusted publishing.
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   build-test:
     name: Build and test
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
@@ -40,3 +58,141 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+  release:
+    name: Release
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.1
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - name: Upgrade npm for trusted publishing
+        run: |
+          npm install -g npm@^11.5.1
+          npm --version
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Determine package version
+        id: release-version
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "Releases must run from the main branch." >&2
+            exit 1
+          fi
+          if [ -n "${{ github.event.inputs.package-version }}" ]; then
+            PACKAGE_VERSION="${{ github.event.inputs.package-version }}"
+          else
+            PACKAGE_VERSION=$(node -p "JSON.parse(require('node:fs').readFileSync('packages/mcp-server/package.json', 'utf8')).version")
+          fi
+          case "$PACKAGE_VERSION" in
+            *[!0-9A-Za-z.+-]* | "" | *..* | .* | *.)
+              echo "Invalid package version: $PACKAGE_VERSION" >&2
+              exit 1
+              ;;
+          esac
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
+          echo "package-version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Align package versions
+        run: node scripts/align-package-versions.mjs "${{ steps.release-version.outputs.package-version }}"
+
+      - name: Type-check
+        run: pnpm check
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Pack npm artifacts
+        run: |
+          mkdir -p artifacts
+          for package_dir in \
+            packages/core \
+            packages/providers/openai \
+            packages/providers/anthropic \
+            packages/mcp-server
+          do
+            (cd "$package_dir" && npm pack --pack-destination "$GITHUB_WORKSPACE/artifacts")
+          done
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-packages-${{ steps.release-version.outputs.package-version }}
+          path: artifacts/*.tgz
+
+      - name: Create version tag
+        env:
+          PACKAGE_VERSION: ${{ steps.release-version.outputs.package-version }}
+        run: |
+          TAG="v${PACKAGE_VERSION}"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG already exists; skipping."
+          else
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.release-version.outputs.package-version }}
+          name: AI Admin API MCP v${{ steps.release-version.outputs.package-version }}
+          prerelease: ${{ contains(steps.release-version.outputs.package-version, '-') }}
+          files: artifacts/*.tgz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish packages to npm
+        if: github.event.inputs.publish-to-npm == 'true'
+        env:
+          NPM_TAG: ${{ github.event.inputs.npm-tag }}
+        run: |
+          echo "Node: $(node --version)"
+          echo "npm:  $(npm --version)"
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
+            echo "OIDC token request environment is missing. Check job permissions (id-token: write)." >&2
+            exit 1
+          fi
+          publish_package() {
+            package_dir="$1"
+            package_name=$(node -p "JSON.parse(require('node:fs').readFileSync('${package_dir}/package.json', 'utf8')).name")
+            if [[ "$package_name" == @* ]]; then
+              (cd "$package_dir" && npm publish --provenance --access public --tag "$NPM_TAG")
+            else
+              (cd "$package_dir" && npm publish --provenance --tag "$NPM_TAG")
+            fi
+          }
+          publish_package packages/core
+          publish_package packages/providers/openai
+          publish_package packages/providers/anthropic
+          publish_package packages/mcp-server
