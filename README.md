@@ -190,3 +190,9 @@ pnpm test:live:anthropic
 ```
 
 Live tests are skipped unless provider credentials are present.
+
+## Release
+
+CI runs `pnpm check` and `pnpm test` on pushes and pull requests targeting `main`.
+
+Publishing to npm is manual through the `Publish to npm` GitHub Actions workflow. Configure the repository secret `NPM_TOKEN` with publish access to the npm packages, then run the workflow from `main` and choose the npm dist-tag. Use the workflow's dry-run option to validate packaging without uploading.
