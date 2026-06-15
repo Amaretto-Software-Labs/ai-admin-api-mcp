@@ -11,7 +11,7 @@ import { startHttpServer } from "./http.js";
 
 describe("Streamable HTTP transport", () => {
   it("requires bearer auth and serves MCP requests", async () => {
-    const listener = startHttpServer({
+    const listener = await startHttpServer({
       config: loadConfig({
         OPENAI_ADMIN_KEY: "sk-test",
         MCP_HTTP_AUTH_TOKEN: "local-token",
@@ -86,7 +86,7 @@ describe("Streamable HTTP transport", () => {
     }
 
     const certs = createTemporaryCertificate();
-    const listener = startHttpServer({
+    const listener = await startHttpServer({
       config: loadConfig({
         OPENAI_ADMIN_KEY: "sk-test",
         MCP_HTTP_AUTH_TOKEN: "local-token",

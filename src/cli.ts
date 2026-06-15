@@ -3,7 +3,7 @@ import { AiAdminError, safeErrorMessage } from "./core/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { loadConfig, ensureRequiredProviders } from "./config.js";
 import { startHttpServer } from "./http.js";
-import { createAiAdminServer } from "./server.js";
+import { createAiAdminServerWithPlugins } from "./server.js";
 
 interface CliArgs {
   mode: "stdio" | "http";
@@ -19,12 +19,12 @@ async function main(): Promise<void> {
   ensureRequiredProviders(config);
 
   if (args.mode === "stdio") {
-    const runtime = createAiAdminServer(config);
+    const runtime = await createAiAdminServerWithPlugins(config);
     await runtime.server.connect(new StdioServerTransport());
     return;
   }
 
-  const listener = startHttpServer({
+  const listener = await startHttpServer({
     config,
     port: args.port,
     ...(args.tlsCertPath === undefined || args.tlsKeyPath === undefined
@@ -120,6 +120,7 @@ Usage:
 
 Environment:
   AI_ADMIN_ENABLED_PROVIDERS=openai,anthropic,elevenlabs
+  AI_ADMIN_PROVIDER_PLUGINS=@acme/ai-admin-provider-example,/absolute/path/to/provider.js
   OPENAI_ADMIN_KEY=...
   ANTHROPIC_ADMIN_KEY=...
   ELEVENLABS_API_KEY=...

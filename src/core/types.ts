@@ -1,7 +1,8 @@
 export const PROVIDER_IDS = ["openai", "anthropic", "elevenlabs", "google-cloud-billing"] as const;
 
-export type ProviderId = (typeof PROVIDER_IDS)[number];
-export type ImplementedProviderId = "openai" | "anthropic" | "elevenlabs";
+export type BuiltinProviderId = (typeof PROVIDER_IDS)[number];
+export type ProviderId = string;
+export type ImplementedProviderId = ProviderId;
 export type BucketWidth = "1m" | "1h" | "1d";
 export type CacheStatus = "hit" | "miss" | "bypass" | "disabled";
 export type CostSource =
@@ -78,7 +79,7 @@ export interface UsageMetrics {
 
 export interface UsageFact {
   id: string;
-  provider: ImplementedProviderId;
+  provider: ProviderId;
   source_endpoint: string;
   bucket_start: string;
   bucket_end: string;
@@ -100,7 +101,7 @@ export interface MoneyAmount {
 
 export interface CostFact {
   id: string;
-  provider: ImplementedProviderId;
+  provider: ProviderId;
   source_endpoint: string;
   bucket_start: string;
   bucket_end: string;
@@ -115,7 +116,7 @@ export interface CostFact {
 }
 
 export interface DashboardBundle {
-  provider: ImplementedProviderId | "multiple";
+  provider: ProviderId | "multiple";
   queried_at: string;
   time_range: TimeRange;
   summary: {
@@ -147,14 +148,14 @@ export interface DashboardBundle {
 }
 
 export interface ProviderCredential {
-  provider: ImplementedProviderId;
+  provider: ProviderId;
   credential_ref: string | null;
   type: "bearer" | "api_key";
   secret: string;
 }
 
 export interface CredentialRequest {
-  provider: ImplementedProviderId;
+  provider: ProviderId;
   credential_ref?: string | null;
   tool: string;
 }
@@ -170,7 +171,7 @@ export interface QueryContext {
 }
 
 export interface ProviderCapability {
-  provider: ImplementedProviderId | "google-cloud-billing";
+  provider: ProviderId;
   display_name: string;
   version: string;
   status: "enabled" | "disabled" | "planned" | "misconfigured";
@@ -187,7 +188,7 @@ export interface ProviderCapability {
 }
 
 export interface ProviderModule {
-  id: ImplementedProviderId;
+  id: ProviderId;
   displayName: string;
   version: string;
   configured: boolean;

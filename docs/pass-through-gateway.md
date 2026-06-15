@@ -7,7 +7,7 @@ Version 0.1 implements static credential mode only. `pass_through` and `hybrid` 
 The MCP server owns:
 
 - read-only MCP tools and resources
-- provider modules
+- provider plugins
 - normalized result shapes
 - static credential refs
 - credential validation

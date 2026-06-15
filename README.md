@@ -4,7 +4,7 @@ Read-only MCP server for querying AI provider administration APIs and returning 
 
 ## Status
 
-Implemented providers:
+Built-in providers:
 
 - OpenAI Admin API usage, costs, projects, users, and project API keys.
 - Anthropic Admin API organization metadata, workspaces, API keys, messages usage, and costs.
@@ -15,6 +15,8 @@ Planned providers:
 - Google Cloud Billing export through BigQuery. This provider is not implemented yet. When it ships, release notes must state that direct BigQuery billing export queries can incur Google Cloud query costs.
 
 All MCP tools are read-only. The server does not expose provider mutation tools.
+
+External provider plugins can be loaded at startup with `AI_ADMIN_PROVIDER_PLUGINS`. See [Provider Plugins](docs/provider-plugins.md).
 
 ## Tech Stack
 
@@ -109,8 +111,9 @@ npx @amaretto-software-labs/ai-admin-api-mcp --https --port 8787
 
 | Variable | Required | Description |
 | --- | --- | --- |
-| `AI_ADMIN_ENABLED_PROVIDERS` | No | Comma-separated `openai,anthropic,elevenlabs`. Defaults to providers with static credentials present. |
-| `AI_ADMIN_REQUIRED_PROVIDERS` | No | Comma-separated providers that must be enabled and statically configured at startup. |
+| `AI_ADMIN_ENABLED_PROVIDERS` | No | Comma-separated provider ids. If omitted, loaded provider plugins may infer enablement from config/credentials. |
+| `AI_ADMIN_PROVIDER_PLUGINS` | No | Comma-separated trusted ESM module specifiers, paths, or `file:` URLs for external provider plugins. |
+| `AI_ADMIN_REQUIRED_PROVIDERS` | No | Comma-separated providers that must be enabled and report configured status at startup. |
 | `AI_ADMIN_CREDENTIAL_MODE` | No | Only `static` is implemented in this runtime build. `pass_through` and `hybrid` are documented gateway contracts and fail fast. |
 | `OPENAI_ADMIN_KEY` | OpenAI static mode | OpenAI Admin API key. |
 | `OPENAI_BASE_URL` | No | Override for tests or compatible OpenAI Admin API gateways. Defaults to `https://api.openai.com/v1`. |
@@ -149,6 +152,23 @@ Common tools:
 - `ai_admin_query_usage`
 - `ai_admin_query_costs`
 - `ai_admin_query_dashboard_bundle`
+
+Common query tools accept provider-specific arguments under `provider_options[provider_id]`:
+
+```json
+{
+  "providers": ["openai"],
+  "provider_options": {
+    "openai": {
+      "usage_endpoint": "images",
+      "group_by": ["project_id", "model"]
+    }
+  },
+  "start": "2026-06-01T00:00:00Z",
+  "end": "2026-06-02T00:00:00Z",
+  "bucket_width": "1d"
+}
+```
 
 OpenAI tools:
 
@@ -192,6 +212,8 @@ Resources:
 - `openai-admin://capabilities`
 - `anthropic-admin://capabilities`
 - `elevenlabs-admin://capabilities`
+
+External provider plugins can register their own tools and resources.
 
 Prompts:
 

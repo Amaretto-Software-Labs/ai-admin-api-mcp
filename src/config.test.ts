@@ -1,16 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { StaticCredentialResolver } from "./credentials.js";
 import { ensureSupportedCredentialMode, loadConfig } from "./config.js";
+import { BUILTIN_PROVIDER_PLUGINS, createProviderRegistry } from "./providers.js";
 
 describe("loadConfig", () => {
-  it("infers enabled providers from static credentials", () => {
+  it("leaves provider inference to the plugin registry", () => {
     const config = loadConfig({
       OPENAI_ADMIN_KEY: "sk-test",
       ANTHROPIC_ADMIN_KEY: "sk-ant-admin-test",
       ELEVENLABS_API_KEY: "xi-test",
     });
+    const registry = createProviderRegistry(config);
 
-    expect(config.enabledProviders).toEqual(["openai", "anthropic", "elevenlabs"]);
+    expect(config.enabledProviders).toEqual([]);
+    expect(Array.from(registry.providers.keys())).toEqual(["openai", "anthropic", "elevenlabs"]);
   });
 
   it("ignores empty optional environment values", () => {
@@ -38,7 +41,7 @@ describe("loadConfig", () => {
 describe("StaticCredentialResolver", () => {
   it("rejects unknown credential refs in static mode", async () => {
     const config = loadConfig({ OPENAI_ADMIN_KEY: "sk-test" });
-    const resolver = new StaticCredentialResolver(config);
+    const resolver = new StaticCredentialResolver(config, BUILTIN_PROVIDER_PLUGINS);
 
     await expect(
       resolver.resolve({
@@ -51,7 +54,7 @@ describe("StaticCredentialResolver", () => {
 
   it("resolves ElevenLabs static credentials", async () => {
     const config = loadConfig({ ELEVENLABS_API_KEY: "xi-test" });
-    const resolver = new StaticCredentialResolver(config);
+    const resolver = new StaticCredentialResolver(config, BUILTIN_PROVIDER_PLUGINS);
 
     await expect(
       resolver.resolve({

@@ -1,10 +1,12 @@
-import { AiAdminError, type ImplementedProviderId } from "./core/index.js";
+import { AiAdminError, type ProviderId } from "./core/index.js";
 
 export type CredentialMode = "static" | "pass_through" | "hybrid";
 
 export interface ServerConfig {
-  enabledProviders: ImplementedProviderId[];
-  requiredProviders: ImplementedProviderId[];
+  enabledProviders: ProviderId[];
+  requiredProviders: ProviderId[];
+  providerPluginModules: string[];
+  pluginEnv: Record<string, string | undefined>;
   credentialMode: CredentialMode;
   openai: {
     adminKey?: string;
@@ -26,12 +28,9 @@ export interface ServerConfig {
   userAgent?: string;
 }
 
-const IMPLEMENTED_PROVIDERS: ImplementedProviderId[] = ["openai", "anthropic", "elevenlabs"];
-
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   const enabledFromEnv = parseProviderList(env.AI_ADMIN_ENABLED_PROVIDERS);
-  const inferredEnabled = IMPLEMENTED_PROVIDERS.filter((provider) => hasProviderConfig(provider, env));
-  const enabledProviders = enabledFromEnv ?? inferredEnabled;
+  const providerPluginModules = splitCsv(env.AI_ADMIN_PROVIDER_PLUGINS);
   const openAiAdminKey = optionalString(env.OPENAI_ADMIN_KEY);
   const openAiBaseUrl = optionalString(env.OPENAI_BASE_URL);
   const anthropicAdminKey = optionalString(env.ANTHROPIC_ADMIN_KEY);
@@ -44,8 +43,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   const userAgent = optionalString(env.MCP_USER_AGENT);
 
   return {
-    enabledProviders,
+    enabledProviders: enabledFromEnv ?? [],
     requiredProviders: parseProviderList(env.AI_ADMIN_REQUIRED_PROVIDERS) ?? [],
+    providerPluginModules,
+    pluginEnv: { ...env },
     credentialMode: parseCredentialMode(env.AI_ADMIN_CREDENTIAL_MODE),
     openai: {
       ...(openAiAdminKey === undefined ? {} : { adminKey: openAiAdminKey }),
@@ -70,11 +71,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
 
 export function ensureRequiredProviders(config: ServerConfig): void {
   for (const provider of config.requiredProviders) {
-    if (!config.enabledProviders.includes(provider)) {
+    if (config.enabledProviders.length > 0 && !config.enabledProviders.includes(provider)) {
       throw new AiAdminError("configuration_error", `Required provider ${provider} is not enabled`);
-    }
-    if (!hasStaticCredential(provider, config)) {
-      throw new AiAdminError("configuration_error", `Required provider ${provider} is missing static credentials`);
     }
   }
 }
@@ -93,20 +91,12 @@ export function ensureSupportedCredentialMode(config: ServerConfig): void {
   );
 }
 
-function parseProviderList(value: string | undefined): ImplementedProviderId[] | undefined {
+function parseProviderList(value: string | undefined): ProviderId[] | undefined {
   if (value === undefined || value.trim() === "") {
     return undefined;
   }
 
-  const providers = splitCsv(value);
-  for (const provider of providers) {
-    if (!IMPLEMENTED_PROVIDERS.includes(provider as ImplementedProviderId)) {
-      throw new AiAdminError("configuration_error", `Unsupported provider ${provider}`, {
-        supported_providers: IMPLEMENTED_PROVIDERS,
-      });
-    }
-  }
-  return providers as ImplementedProviderId[];
+  return splitCsv(value);
 }
 
 function parseCredentialMode(value: string | undefined): CredentialMode {
@@ -117,26 +107,6 @@ function parseCredentialMode(value: string | undefined): CredentialMode {
     return value;
   }
   throw new AiAdminError("configuration_error", `Unsupported credential mode ${value}`);
-}
-
-function hasProviderConfig(provider: ImplementedProviderId, env: NodeJS.ProcessEnv): boolean {
-  if (provider === "openai") {
-    return optionalString(env.OPENAI_ADMIN_KEY) !== undefined;
-  }
-  if (provider === "anthropic") {
-    return optionalString(env.ANTHROPIC_ADMIN_KEY) !== undefined || optionalString(env.ANTHROPIC_OAUTH_TOKEN) !== undefined;
-  }
-  return optionalString(env.ELEVENLABS_API_KEY) !== undefined;
-}
-
-function hasStaticCredential(provider: ImplementedProviderId, config: ServerConfig): boolean {
-  if (provider === "openai") {
-    return Boolean(config.openai.adminKey);
-  }
-  if (provider === "anthropic") {
-    return Boolean(config.anthropic.adminKey || config.anthropic.oauthToken);
-  }
-  return Boolean(config.elevenlabs.apiKey);
 }
 
 function splitCsv(value: string | undefined): string[] {

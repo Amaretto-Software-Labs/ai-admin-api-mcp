@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import type { IncomingMessage, Server as NodeHttpServer, ServerResponse } from "node:http";
 import { createServer as createHttpsServer, type ServerOptions as HttpsServerOptions } from "node:https";
 import type { ServerConfig } from "./config.js";
-import { createProviderRegistry } from "./providers.js";
+import { createProviderRegistryWithPlugins } from "./providers.js";
 import { createAiAdminServer } from "./server.js";
 
 type McpRequest = IncomingMessage & { body?: unknown };
@@ -34,9 +34,9 @@ export interface StartedHttpServer {
   url: string;
 }
 
-export function startHttpServer(options: HttpServerOptions): StartedHttpServer {
+export async function startHttpServer(options: HttpServerOptions): Promise<StartedHttpServer> {
   const app = createMcpExpressApp();
-  const registry = createProviderRegistry(options.config);
+  const registry = await createProviderRegistryWithPlugins(options.config);
   const host = options.host ?? "127.0.0.1";
   const scheme = options.tls === undefined ? "http" : "https";
 

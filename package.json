@@ -20,6 +20,7 @@
   "types": "./dist/index.d.ts",
   "files": [
     "README.md",
+    "docs",
     "dist",
     "!dist/**/*.test.*"
   ],
