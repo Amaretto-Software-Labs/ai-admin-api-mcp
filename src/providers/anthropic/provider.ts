@@ -237,6 +237,7 @@ export class AnthropicProvider {
         cache_creation_input_tokens: sumNumbers(usageFacts.map((fact) => fact.metrics.cache_creation_input_tokens)),
         request_count: sumNumbers(usageFacts.map((fact) => fact.metrics.request_count)),
         operation_count: null,
+        credit_count: null,
       },
       series: { cost_by_bucket: costFacts, usage_by_bucket: usageFacts },
       top: { projects_by_cost: [], workspaces_by_cost: [], models_by_tokens: [], api_keys_by_tokens: [] },

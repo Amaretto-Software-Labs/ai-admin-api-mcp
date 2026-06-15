@@ -10,7 +10,7 @@ The MCP server owns:
 - provider modules
 - normalized result shapes
 - static credential refs
-- redaction and validation
+- credential validation
 
 The gateway owns:
 
@@ -48,6 +48,7 @@ The current runtime supports:
 - `AI_ADMIN_CREDENTIAL_MODE=static`
 - `credential:openai:static`
 - `credential:anthropic:static`
+- `credential:elevenlabs:static`
 
 The current runtime rejects:
 

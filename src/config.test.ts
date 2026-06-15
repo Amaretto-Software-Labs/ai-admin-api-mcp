@@ -7,9 +7,10 @@ describe("loadConfig", () => {
     const config = loadConfig({
       OPENAI_ADMIN_KEY: "sk-test",
       ANTHROPIC_ADMIN_KEY: "sk-ant-admin-test",
+      ELEVENLABS_API_KEY: "xi-test",
     });
 
-    expect(config.enabledProviders).toEqual(["openai", "anthropic"]);
+    expect(config.enabledProviders).toEqual(["openai", "anthropic", "elevenlabs"]);
   });
 
   it("ignores empty optional environment values", () => {
@@ -46,5 +47,22 @@ describe("StaticCredentialResolver", () => {
         tool: "openai_admin_query_usage",
       }),
     ).rejects.toMatchObject({ code: "permission_denied" });
+  });
+
+  it("resolves ElevenLabs static credentials", async () => {
+    const config = loadConfig({ ELEVENLABS_API_KEY: "xi-test" });
+    const resolver = new StaticCredentialResolver(config);
+
+    await expect(
+      resolver.resolve({
+        provider: "elevenlabs",
+        credential_ref: "credential:elevenlabs:static",
+        tool: "elevenlabs_admin_query_usage",
+      }),
+    ).resolves.toMatchObject({
+      provider: "elevenlabs",
+      type: "api_key",
+      secret: "xi-test",
+    });
   });
 });

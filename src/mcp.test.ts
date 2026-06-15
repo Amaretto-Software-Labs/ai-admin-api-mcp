@@ -59,6 +59,17 @@ describe("MCP server", () => {
         return;
       }
 
+      if (url.pathname === "/elevenlabs/v1/workspace/analytics/query/usage-by-product-over-time") {
+        expect(request.headers["xi-api-key"]).toBe("xi-test");
+        sendJson(response, 200, {
+          columns: ["time", "product_type", "model", "user_id", "hashed_xi_api_key", "credits", "request_count"],
+          column_types: ["DateTime", "String", "String", "String", "String", "Float", "Int"],
+          column_units: [null, null, null, null, null, "credits", null],
+          rows: [["2026-06-01T00:00:00Z", "tts", "eleven_multilingual_v2", "user_mcp", "hash_mcp", 25, 5]],
+        });
+        return;
+      }
+
       sendJson(response, 404, { error: { message: `Unhandled fixture path ${url.pathname}` } });
     }, async (baseUrl) => {
       const runtime = createAiAdminServer(loadConfig({
@@ -66,6 +77,8 @@ describe("MCP server", () => {
         OPENAI_BASE_URL: `${baseUrl}/openai/v1`,
         ANTHROPIC_ADMIN_KEY: "sk-ant-admin-test",
         ANTHROPIC_BASE_URL: `${baseUrl}/anthropic/v1`,
+        ELEVENLABS_API_KEY: "xi-test",
+        ELEVENLABS_BASE_URL: `${baseUrl}/elevenlabs/v1`,
       }));
       const client = new Client({ name: "mcp-test-client", version: "0.1.0" });
       const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -77,6 +90,7 @@ describe("MCP server", () => {
         const toolNames = tools.tools.map((tool) => tool.name);
         expect(toolNames).toContain("openai_admin_query_usage");
         expect(toolNames).toContain("anthropic_admin_query_messages_usage");
+        expect(toolNames).toContain("elevenlabs_admin_query_usage");
 
         const prompts = await client.listPrompts();
         expect(prompts.prompts.map((prompt) => prompt.name)).toEqual(expect.arrayContaining([
@@ -99,6 +113,7 @@ describe("MCP server", () => {
         expect(providers).toEqual(expect.arrayContaining([
           expect.objectContaining({ provider: "openai", status: "enabled" }),
           expect.objectContaining({ provider: "anthropic", status: "enabled" }),
+          expect.objectContaining({ provider: "elevenlabs", status: "enabled" }),
           expect.objectContaining({ provider: "google-cloud-billing", status: "planned" }),
         ]));
 
@@ -133,8 +148,23 @@ describe("MCP server", () => {
 
         expect(anthropicResult.data.usage[0]?.metrics.input_tokens).toBe(10);
         expect(anthropicResult.data.usage[0]?.metrics.output_tokens).toBe(4);
+
+        const elevenLabsResult = parseToolJson<{ data: { usage: Array<{ metrics: { credit_count: number | null; request_count: number | null } }> } }>(
+          await client.callTool({
+            name: "elevenlabs_admin_query_usage",
+            arguments: {
+              start: "2026-06-01T00:00:00Z",
+              end: "2026-06-02T00:00:00Z",
+              group_by: ["product_type", "model", "user_id", "hashed_xi_api_key"],
+            },
+          }),
+        );
+
+        expect(elevenLabsResult.data.usage[0]?.metrics.credit_count).toBe(25);
+        expect(elevenLabsResult.data.usage[0]?.metrics.request_count).toBe(5);
         expect(JSON.stringify(openAiResult)).not.toContain("sk-test");
         expect(JSON.stringify(anthropicResult)).not.toContain("sk-ant-admin-test");
+        expect(JSON.stringify(elevenLabsResult)).not.toContain("xi-test");
       } finally {
         await client.close();
         await runtime.server.close();
@@ -144,6 +174,7 @@ describe("MCP server", () => {
     expect(requests).toEqual(expect.arrayContaining([
       expect.stringContaining("/openai/v1/organization/usage/images"),
       expect.stringContaining("/anthropic/v1/organizations/usage_report/messages"),
+      expect.stringContaining("/elevenlabs/v1/workspace/analytics/query/usage-by-product-over-time"),
     ]));
   });
 });

@@ -26,6 +26,7 @@ export function baseUsageMetrics(overrides: Partial<UsageMetrics> = {}): UsageMe
     output_audio_tokens: null,
     request_count: null,
     operation_count: null,
+    credit_count: null,
     image_count: null,
     character_count: null,
     audio_seconds: null,
@@ -61,4 +62,3 @@ export function sumNumbers(values: Array<number | null | undefined>): number | n
 export function warning(code: string, message: string, details?: Record<string, unknown>): Warning {
   return details === undefined ? { code, message } : { code, message, details };
 }
-

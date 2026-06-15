@@ -242,6 +242,7 @@ export class OpenAiProvider {
         cache_creation_input_tokens: null,
         request_count: sumNumbers(usageFacts.map((fact) => fact.metrics.request_count)),
         operation_count: sumNumbers(usageFacts.map((fact) => fact.metrics.operation_count)),
+        credit_count: null,
       },
       series: {
         cost_by_bucket: costFacts,

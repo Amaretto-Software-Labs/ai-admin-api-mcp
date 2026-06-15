@@ -4,6 +4,7 @@ import type { ServerConfig } from "./config.js";
 const STATIC_REFS = {
   openai: "credential:openai:static",
   anthropic: "credential:anthropic:static",
+  elevenlabs: "credential:elevenlabs:static",
 } as const;
 
 export class StaticCredentialResolver implements CredentialResolver {
@@ -31,6 +32,18 @@ export class StaticCredentialResolver implements CredentialResolver {
       };
     }
 
+    if (request.provider === "elevenlabs") {
+      if (!this.config.elevenlabs.apiKey) {
+        throw new AiAdminError("configuration_error", "ELEVENLABS_API_KEY is required for ElevenLabs static credential mode");
+      }
+      return {
+        provider: "elevenlabs",
+        credential_ref: request.credential_ref ?? expectedRef,
+        type: "api_key",
+        secret: this.config.elevenlabs.apiKey,
+      };
+    }
+
     if (this.config.anthropic.oauthToken) {
       return {
         provider: "anthropic",
@@ -52,4 +65,3 @@ export class StaticCredentialResolver implements CredentialResolver {
     };
   }
 }
-

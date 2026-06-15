@@ -17,12 +17,16 @@ export interface ServerConfig {
     version?: string;
     betaHeaders: string[];
   };
+  elevenlabs: {
+    apiKey?: string;
+    baseUrl?: string;
+  };
   httpAuthToken?: string;
   cacheTtlSeconds: number;
   userAgent?: string;
 }
 
-const IMPLEMENTED_PROVIDERS: ImplementedProviderId[] = ["openai", "anthropic"];
+const IMPLEMENTED_PROVIDERS: ImplementedProviderId[] = ["openai", "anthropic", "elevenlabs"];
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   const enabledFromEnv = parseProviderList(env.AI_ADMIN_ENABLED_PROVIDERS);
@@ -34,6 +38,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   const anthropicOAuthToken = optionalString(env.ANTHROPIC_OAUTH_TOKEN);
   const anthropicBaseUrl = optionalString(env.ANTHROPIC_BASE_URL);
   const anthropicVersion = optionalString(env.ANTHROPIC_VERSION);
+  const elevenLabsApiKey = optionalString(env.ELEVENLABS_API_KEY);
+  const elevenLabsBaseUrl = optionalString(env.ELEVENLABS_BASE_URL);
   const httpAuthToken = optionalString(env.MCP_HTTP_AUTH_TOKEN);
   const userAgent = optionalString(env.MCP_USER_AGENT);
 
@@ -51,6 +57,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
       ...(anthropicBaseUrl === undefined ? {} : { baseUrl: anthropicBaseUrl }),
       ...(anthropicVersion === undefined ? {} : { version: anthropicVersion }),
       betaHeaders: splitCsv(env.ANTHROPIC_BETA),
+    },
+    elevenlabs: {
+      ...(elevenLabsApiKey === undefined ? {} : { apiKey: elevenLabsApiKey }),
+      ...(elevenLabsBaseUrl === undefined ? {} : { baseUrl: elevenLabsBaseUrl }),
     },
     ...(httpAuthToken === undefined ? {} : { httpAuthToken }),
     cacheTtlSeconds: parsePositiveInt(env.MCP_CACHE_TTL_SECONDS, 60),
@@ -113,14 +123,20 @@ function hasProviderConfig(provider: ImplementedProviderId, env: NodeJS.ProcessE
   if (provider === "openai") {
     return optionalString(env.OPENAI_ADMIN_KEY) !== undefined;
   }
-  return optionalString(env.ANTHROPIC_ADMIN_KEY) !== undefined || optionalString(env.ANTHROPIC_OAUTH_TOKEN) !== undefined;
+  if (provider === "anthropic") {
+    return optionalString(env.ANTHROPIC_ADMIN_KEY) !== undefined || optionalString(env.ANTHROPIC_OAUTH_TOKEN) !== undefined;
+  }
+  return optionalString(env.ELEVENLABS_API_KEY) !== undefined;
 }
 
 function hasStaticCredential(provider: ImplementedProviderId, config: ServerConfig): boolean {
   if (provider === "openai") {
     return Boolean(config.openai.adminKey);
   }
-  return Boolean(config.anthropic.adminKey || config.anthropic.oauthToken);
+  if (provider === "anthropic") {
+    return Boolean(config.anthropic.adminKey || config.anthropic.oauthToken);
+  }
+  return Boolean(config.elevenlabs.apiKey);
 }
 
 function splitCsv(value: string | undefined): string[] {

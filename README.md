@@ -8,6 +8,7 @@ Implemented providers:
 
 - OpenAI Admin API usage, costs, projects, users, and project API keys.
 - Anthropic Admin API organization metadata, workspaces, API keys, messages usage, and costs.
+- ElevenLabs workspace credit usage analytics, API request analytics, audit logs, user/subscription metadata, service accounts, and service-account API keys.
 
 Planned providers:
 
@@ -31,6 +32,7 @@ Run the published package with `npx`:
 ```sh
 OPENAI_ADMIN_KEY=sk-admin-... \
 ANTHROPIC_ADMIN_KEY=sk-ant-admin-... \
+ELEVENLABS_API_KEY=xi-... \
 npx @amaretto-software-labs/ai-admin-api-mcp --stdio
 ```
 
@@ -53,6 +55,7 @@ Run over STDIO:
 ```sh
 OPENAI_ADMIN_KEY=sk-admin-... \
 ANTHROPIC_ADMIN_KEY=sk-ant-admin-... \
+ELEVENLABS_API_KEY=xi-... \
 pnpm start:stdio
 ```
 
@@ -61,6 +64,7 @@ Run over Streamable HTTP:
 ```sh
 OPENAI_ADMIN_KEY=sk-admin-... \
 ANTHROPIC_ADMIN_KEY=sk-ant-admin-... \
+ELEVENLABS_API_KEY=xi-... \
 MCP_HTTP_AUTH_TOKEN=local-proxy-token \
 pnpm start:http
 ```
@@ -72,6 +76,7 @@ Run the gateway-compatible local HTTPS endpoint with a local development certifi
 ```sh
 OPENAI_ADMIN_KEY=sk-admin-... \
 ANTHROPIC_ADMIN_KEY=sk-ant-admin-... \
+ELEVENLABS_API_KEY=xi-... \
 MCP_HTTP_AUTH_TOKEN=local-proxy-token \
 MCP_HTTPS_CERT_PATH=/path/to/localhost.pem \
 MCP_HTTPS_KEY_PATH=/path/to/localhost.key \
@@ -85,12 +90,16 @@ Use the published package for Streamable HTTP or HTTPS by passing the same flags
 ```sh
 MCP_HTTP_AUTH_TOKEN=local-proxy-token \
 OPENAI_ADMIN_KEY=sk-admin-... \
+ANTHROPIC_ADMIN_KEY=sk-ant-admin-... \
+ELEVENLABS_API_KEY=xi-... \
 npx @amaretto-software-labs/ai-admin-api-mcp --http --port 8787
 ```
 
 ```sh
 MCP_HTTP_AUTH_TOKEN=local-proxy-token \
 OPENAI_ADMIN_KEY=sk-admin-... \
+ANTHROPIC_ADMIN_KEY=sk-ant-admin-... \
+ELEVENLABS_API_KEY=xi-... \
 MCP_HTTPS_CERT_PATH=/path/to/localhost.pem \
 MCP_HTTPS_KEY_PATH=/path/to/localhost.key \
 npx @amaretto-software-labs/ai-admin-api-mcp --https --port 8787
@@ -100,7 +109,7 @@ npx @amaretto-software-labs/ai-admin-api-mcp --https --port 8787
 
 | Variable | Required | Description |
 | --- | --- | --- |
-| `AI_ADMIN_ENABLED_PROVIDERS` | No | Comma-separated `openai,anthropic`. Defaults to providers with static credentials present. |
+| `AI_ADMIN_ENABLED_PROVIDERS` | No | Comma-separated `openai,anthropic,elevenlabs`. Defaults to providers with static credentials present. |
 | `AI_ADMIN_REQUIRED_PROVIDERS` | No | Comma-separated providers that must be enabled and statically configured at startup. |
 | `AI_ADMIN_CREDENTIAL_MODE` | No | Only `static` is implemented in this runtime build. `pass_through` and `hybrid` are documented gateway contracts and fail fast. |
 | `OPENAI_ADMIN_KEY` | OpenAI static mode | OpenAI Admin API key. |
@@ -110,6 +119,8 @@ npx @amaretto-software-labs/ai-admin-api-mcp --https --port 8787
 | `ANTHROPIC_BASE_URL` | No | Override for tests or compatible Anthropic Admin API gateways. Defaults to `https://api.anthropic.com/v1`. |
 | `ANTHROPIC_VERSION` | No | Anthropic API version. Defaults to `2023-06-01`. |
 | `ANTHROPIC_BETA` | No | Comma-separated Anthropic beta headers, for example `fast-mode-2026-02-01`. |
+| `ELEVENLABS_API_KEY` | ElevenLabs static mode | ElevenLabs API key, sent as `xi-api-key`. |
+| `ELEVENLABS_BASE_URL` | No | Override for tests or compatible ElevenLabs API gateways. Defaults to `https://api.elevenlabs.io/v1`. |
 | `MCP_HTTP_AUTH_TOKEN` | HTTP mode | Bearer token required by the MCP HTTP endpoint unless unsafe local mode is used. |
 | `MCP_HTTPS_CERT_PATH` | HTTPS mode | PEM certificate path for local HTTPS. |
 | `MCP_HTTPS_KEY_PATH` | HTTPS mode | PEM private-key path for local HTTPS. |
@@ -124,6 +135,7 @@ In v0.1 static mode, these credential refs are accepted:
 
 - `credential:openai:static`
 - `credential:anthropic:static`
+- `credential:elevenlabs:static`
 
 Omit `credential_ref` to use the static provider credential. Unknown refs are rejected.
 
@@ -156,6 +168,17 @@ Anthropic tools:
 - `anthropic_admin_query_costs`
 - `anthropic_admin_query_dashboard_bundle`
 
+ElevenLabs tools:
+
+- `elevenlabs_admin_get_user`
+- `elevenlabs_admin_get_subscription`
+- `elevenlabs_admin_list_service_accounts`
+- `elevenlabs_admin_list_service_account_api_keys`
+- `elevenlabs_admin_list_audit_logs`
+- `elevenlabs_admin_list_api_requests`
+- `elevenlabs_admin_query_usage`
+- `elevenlabs_admin_query_dashboard_bundle`
+
 ## Resources and Prompts
 
 Resources:
@@ -168,6 +191,7 @@ Resources:
 - `ai-admin://schema/dashboard-bundle-v1`
 - `openai-admin://capabilities`
 - `anthropic-admin://capabilities`
+- `elevenlabs-admin://capabilities`
 
 Prompts:
 
@@ -180,6 +204,7 @@ Prompts:
 - OpenAI usage endpoints have endpoint-specific filters, groupings, and metrics. Unsupported parameters are rejected before any provider call.
 - Anthropic costs are reported in minor units and normalized to USD major units. Priority Tier costs are not included in the Anthropic cost endpoint.
 - Anthropic `speed` usage filters/groupings require `ANTHROPIC_BETA=fast-mode-2026-02-01`.
+- ElevenLabs workspace analytics reports credit usage. The provider exposes `credit_count`; provider-reported monetary cost is not available from the implemented endpoint.
 - Google Cloud Billing support is planned only. BigQuery queries against billing export tables can be cost-bearing.
 
 ## MCP Client Example
@@ -192,7 +217,8 @@ Prompts:
       "args": ["--dir", "/absolute/path/to/ai-admin-api-mcp", "start:stdio"],
       "env": {
         "OPENAI_ADMIN_KEY": "sk-admin-...",
-        "ANTHROPIC_ADMIN_KEY": "sk-ant-admin-..."
+        "ANTHROPIC_ADMIN_KEY": "sk-ant-admin-...",
+        "ELEVENLABS_API_KEY": "xi-..."
       }
     }
   }
@@ -206,6 +232,7 @@ docker build -t ai-admin-api-mcp .
 docker run --rm -p 8787:8787 \
   -e OPENAI_ADMIN_KEY \
   -e ANTHROPIC_ADMIN_KEY \
+  -e ELEVENLABS_API_KEY \
   -e MCP_HTTP_AUTH_TOKEN \
   ai-admin-api-mcp
 ```

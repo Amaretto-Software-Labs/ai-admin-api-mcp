@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Added ElevenLabs Admin provider support for workspace credit usage analytics, API request analytics, audit logs, user/subscription metadata, and service-account API key inventory.
+- Added normalized `credit_count` usage metrics and dashboard summaries.
+- Documented that the ElevenLabs provider reports credit usage, not provider-reported monetary cost.
+
 ## 0.1.0
 
 - Added a Node.js/TypeScript MCP server with STDIO and Streamable HTTP transports.

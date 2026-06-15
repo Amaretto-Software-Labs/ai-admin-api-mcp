@@ -3,6 +3,7 @@ import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import * as z from "zod/v4";
 import { envelope, lastCompleteDaysRange, safeErrorMessage, type ImplementedProviderId, type QueryContext, type Warning } from "./core/index.js";
 import type { AnthropicCostsInput, AnthropicMessagesUsageInput } from "./providers/anthropic/index.js";
+import { ELEVENLABS_FILTER_OPERATIONS, ELEVENLABS_USAGE_GROUP_BY, type ElevenLabsColumnFilter, type ElevenLabsListAuditLogsInput, type ElevenLabsListRequestsInput, type ElevenLabsQueryUsageInput } from "./providers/elevenlabs/index.js";
 import type { OpenAiQueryCostsInput, OpenAiQueryUsageInput } from "./providers/openai/index.js";
 import { ensureSupportedCredentialMode, type ServerConfig } from "./config.js";
 import { StaticCredentialResolver } from "./credentials.js";
@@ -18,9 +19,14 @@ export interface AiAdminServerOptions {
   registry?: ProviderRegistry;
 }
 
-const providerListSchema = z.array(z.enum(["openai", "anthropic"])).optional();
-const credentialRefsSchema = z.record(z.enum(["openai", "anthropic"]), z.string()).optional();
+const providerListSchema = z.array(z.enum(["openai", "anthropic", "elevenlabs"])).optional();
+const credentialRefsSchema = z.record(z.enum(["openai", "anthropic", "elevenlabs"]), z.string()).optional();
 const credentialRefSchema = z.string().nullable().optional();
+const elevenLabsFilterSchema = z.object({
+  column: z.string(),
+  operation: z.enum(ELEVENLABS_FILTER_OPERATIONS),
+  values: z.array(z.union([z.string(), z.number(), z.boolean(), z.null()])),
+});
 const openAiListSchema = {
   credential_ref: credentialRefSchema,
   limit: z.number().int().positive().nullable().optional(),
@@ -58,6 +64,7 @@ export function createAiAdminServer(config: ServerConfig, options: AiAdminServer
   registerCommonTools(server, registry, context);
   registerOpenAiTools(server, registry, context);
   registerAnthropicTools(server, registry, context);
+  registerElevenLabsTools(server, registry, context);
 
   return { server, registry };
 }
@@ -70,12 +77,13 @@ function registerResources(server: McpServer, registry: ProviderRegistry): void 
   registerJsonResource(server, "dashboard-bundle-schema", "ai-admin://schema/dashboard-bundle-v1", dashboardBundleSchema);
   registerJsonResource(server, "openai-capabilities", "openai-admin://capabilities", () => registry.openai?.capabilities() ?? null);
   registerJsonResource(server, "anthropic-capabilities", "anthropic-admin://capabilities", () => registry.anthropic?.capabilities() ?? null);
+  registerJsonResource(server, "elevenlabs-capabilities", "elevenlabs-admin://capabilities", () => registry.elevenlabs?.capabilities() ?? null);
   server.registerResource(
     "provider-capabilities-template",
     new ResourceTemplate("ai-admin://providers/{provider}/capabilities", {
       list: undefined,
       complete: {
-        provider: () => ["openai", "anthropic", "google-cloud-billing"],
+        provider: () => ["openai", "anthropic", "elevenlabs", "google-cloud-billing"],
       },
     }),
     { mimeType: "application/json" },
@@ -113,7 +121,7 @@ function registerPrompts(server: McpServer): void {
     {
       description: "Guide an agent to request normalized dashboard bundles and build a dashboard.",
       argsSchema: {
-        provider: z.enum(["openai", "anthropic"]).optional(),
+        provider: z.enum(["openai", "anthropic", "elevenlabs"]).optional(),
       },
     },
     async ({ provider }) => ({
@@ -192,6 +200,11 @@ function registerCommonTools(server: McpServer, registry: ProviderRegistry, cont
         anthropic: z.object({
           group_by: z.array(z.string()).optional(),
           filters: z.record(z.string(), z.array(z.string())).optional(),
+        }).optional(),
+        elevenlabs: z.object({
+          group_by: z.array(z.enum(ELEVENLABS_USAGE_GROUP_BY)).optional(),
+          filters: z.array(elevenLabsFilterSchema).optional(),
+          time_zone: z.string().optional(),
         }).optional(),
       },
       annotations: { readOnlyHint: true, openWorldHint: true },
@@ -457,6 +470,128 @@ function registerAnthropicTools(server: McpServer, registry: ProviderRegistry, c
   );
 }
 
+function registerElevenLabsTools(server: McpServer, registry: ProviderRegistry, context: () => QueryContext): void {
+  if (!registry.elevenlabs) {
+    return;
+  }
+  server.registerTool("elevenlabs_admin_get_user", {
+    description: "Return ElevenLabs user metadata for the configured API key.",
+    inputSchema: {
+      credential_ref: credentialRefSchema,
+    },
+    annotations: { readOnlyHint: true },
+  }, async (args) =>
+    asToolResult(async () => registry.elevenlabs?.getUser(stripUndefined(args) as { credential_ref?: string | null }, context())),
+  );
+  server.registerTool("elevenlabs_admin_get_subscription", {
+    description: "Return ElevenLabs subscription metadata for the configured API key.",
+    inputSchema: {
+      credential_ref: credentialRefSchema,
+    },
+    annotations: { readOnlyHint: true },
+  }, async (args) =>
+    asToolResult(async () => registry.elevenlabs?.getSubscription(stripUndefined(args) as { credential_ref?: string | null }, context())),
+  );
+  server.registerTool("elevenlabs_admin_list_service_accounts", {
+    description: "List ElevenLabs workspace service accounts.",
+    inputSchema: {
+      credential_ref: credentialRefSchema,
+    },
+    annotations: { readOnlyHint: true },
+  }, async (args) =>
+    asToolResult(async () => registry.elevenlabs?.listServiceAccounts(stripUndefined(args) as { credential_ref?: string | null }, context())),
+  );
+  server.registerTool(
+    "elevenlabs_admin_list_service_account_api_keys",
+    {
+      description: "List ElevenLabs API keys for one service account.",
+      inputSchema: {
+        service_account_user_id: z.string(),
+        credential_ref: credentialRefSchema,
+      },
+      annotations: { readOnlyHint: true },
+    },
+    async (args) =>
+      asToolResult(async () =>
+        registry.elevenlabs?.listServiceAccountApiKeys(
+          stripUndefined(args) as { credential_ref?: string | null; service_account_user_id: string },
+          context(),
+        )),
+  );
+  server.registerTool(
+    "elevenlabs_admin_list_audit_logs",
+    {
+      description: "List ElevenLabs workspace audit logs. This requires an ElevenLabs enterprise tier and audit-log permission.",
+      inputSchema: {
+        credential_ref: credentialRefSchema,
+        limit: z.number().int().positive().max(100).nullable().optional(),
+        cursor: z.string().nullable().optional(),
+        start: z.string().datetime({ offset: true }).nullable().optional(),
+        end: z.string().datetime({ offset: true }).nullable().optional(),
+        actor_uid: z.string().nullable().optional(),
+        class_name: z.string().nullable().optional(),
+        activity_name: z.string().nullable().optional(),
+      },
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async (args) => asToolResult(async () => registry.elevenlabs?.listAuditLogs(stripUndefined(args) as ElevenLabsListAuditLogsInput, context())),
+  );
+  server.registerTool(
+    "elevenlabs_admin_list_api_requests",
+    {
+      description: "List ElevenLabs workspace API request analytics in the provider tabular format.",
+      inputSchema: {
+        credential_ref: credentialRefSchema,
+        start: z.string().datetime({ offset: true }).nullable().optional(),
+        end: z.string().datetime({ offset: true }).nullable().optional(),
+        limit: z.number().int().positive().max(1000).nullable().optional(),
+        sort: z.enum(["asc", "desc"]).nullable().optional(),
+        filters: z.array(elevenLabsFilterSchema).default([]),
+        search: z.string().nullable().optional(),
+      },
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async (args) => asToolResult(async () => registry.elevenlabs?.listApiRequests(stripUndefined(args) as ElevenLabsListRequestsInput, context())),
+  );
+  server.registerTool(
+    "elevenlabs_admin_query_usage",
+    {
+      description: "Query ElevenLabs workspace credit usage and return normalized usage facts.",
+      inputSchema: {
+        credential_ref: z.string().nullable().optional(),
+        start: z.string().datetime({ offset: true }),
+        end: z.string().datetime({ offset: true }),
+        bucket_width: z.enum(["1m", "1h", "1d"]).default("1d"),
+        group_by: z.array(z.enum(ELEVENLABS_USAGE_GROUP_BY)).default([]),
+        filters: z.array(elevenLabsFilterSchema).default([]),
+        time_zone: z.string().default("UTC"),
+        include_raw: z.boolean().default(false),
+      },
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async (args) => asToolResult(async () => registry.elevenlabs?.queryUsage(args as ElevenLabsQueryUsageInput, context())),
+  );
+  server.registerTool(
+    "elevenlabs_admin_query_dashboard_bundle",
+    {
+      description: "Query ElevenLabs workspace credit usage for a dashboard range.",
+      inputSchema: {
+        credential_ref: z.string().nullable().optional(),
+        start: z.string().datetime({ offset: true }),
+        end: z.string().datetime({ offset: true }),
+        bucket_width: z.enum(["1m", "1h", "1d"]).default("1d"),
+        group_by: z.array(z.enum(ELEVENLABS_USAGE_GROUP_BY)).optional(),
+        filters: z.array(elevenLabsFilterSchema).optional(),
+        time_zone: z.string().default("UTC"),
+        top_n: z.number().int().positive().default(10),
+        include_metadata: z.boolean().default(false),
+      },
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async (args) => asToolResult(async () => registry.elevenlabs?.queryDashboardBundle(stripUndefined(args) as Parameters<NonNullable<typeof registry.elevenlabs>["queryDashboardBundle"]>[0], context())),
+  );
+}
+
 interface CommonUsageArgs {
   providers?: ImplementedProviderId[] | undefined;
   credential_refs?: Record<ImplementedProviderId, string> | undefined;
@@ -466,6 +601,7 @@ interface CommonUsageArgs {
   include_raw: boolean;
   openai?: { usage_endpoint?: OpenAiQueryUsageInput["usage_endpoint"] | undefined; group_by?: string[] | undefined; endpoint_params?: Record<string, unknown> | undefined } | undefined;
   anthropic?: { group_by?: string[] | undefined; filters?: AnthropicMessagesUsageInput["filters"] | undefined } | undefined;
+  elevenlabs?: { group_by?: string[] | undefined; filters?: ElevenLabsColumnFilter[] | undefined; time_zone?: string | undefined } | undefined;
 }
 
 async function queryCommonUsage(args: CommonUsageArgs, registry: ProviderRegistry, context: QueryContext): Promise<unknown> {
@@ -503,6 +639,22 @@ async function queryCommonUsage(args: CommonUsageArgs, registry: ProviderRegistr
           bucket_width: args.bucket_width,
           group_by: args.anthropic?.group_by ?? [],
           filters: args.anthropic?.filters ?? {},
+          include_raw: args.include_raw,
+        }, context);
+      }
+      if (provider === "elevenlabs") {
+        if (!registry.elevenlabs) {
+          warnings[provider] = [providerNotEnabledWarning(provider)];
+          continue;
+        }
+        results.elevenlabs = await registry.elevenlabs.queryUsage({
+          credential_ref: args.credential_refs?.elevenlabs ?? null,
+          start: args.start,
+          end: args.end,
+          bucket_width: args.bucket_width,
+          group_by: args.elevenlabs?.group_by ?? [],
+          filters: args.elevenlabs?.filters ?? [],
+          time_zone: args.elevenlabs?.time_zone ?? "UTC",
           include_raw: args.include_raw,
         }, context);
       }
@@ -558,6 +710,12 @@ async function queryCommonCosts(args: CommonCostsArgs, registry: ProviderRegistr
           filters: args.anthropic?.filters ?? {},
           include_raw: args.include_raw,
         }, context);
+      }
+      if (provider === "elevenlabs") {
+        warnings[provider] = [{
+          code: "costs_not_supported",
+          message: "ElevenLabs support currently exposes credit usage, not provider-reported monetary costs.",
+        }];
       }
     } catch (error) {
       warnings[provider] = [{ code: "provider_failed", message: safeErrorMessage(error) }];
@@ -615,6 +773,20 @@ async function queryDashboard(args: CommonDashboardArgs, registry: ProviderRegis
           include_metadata: args.include_metadata,
         }, context);
       }
+      if (provider === "elevenlabs") {
+        if (!registry.elevenlabs) {
+          warnings[provider] = [providerNotEnabledWarning(provider)];
+          continue;
+        }
+        results.elevenlabs = await registry.elevenlabs.queryDashboardBundle({
+          credential_ref: args.credential_refs?.elevenlabs ?? null,
+          start,
+          end,
+          bucket_width: args.bucket_width,
+          top_n: args.top_n,
+          include_metadata: args.include_metadata,
+        }, context);
+      }
     } catch (error) {
       warnings[provider] = [{ code: "provider_failed", message: safeErrorMessage(error) }];
     }
@@ -627,6 +799,7 @@ function enabledProviderIds(registry: ProviderRegistry): ImplementedProviderId[]
   return [
     ...(registry.openai ? ["openai" as const] : []),
     ...(registry.anthropic ? ["anthropic" as const] : []),
+    ...(registry.elevenlabs ? ["elevenlabs" as const] : []),
   ];
 }
 

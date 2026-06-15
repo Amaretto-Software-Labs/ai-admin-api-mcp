@@ -1,7 +1,7 @@
-export const PROVIDER_IDS = ["openai", "anthropic", "google-cloud-billing"] as const;
+export const PROVIDER_IDS = ["openai", "anthropic", "elevenlabs", "google-cloud-billing"] as const;
 
 export type ProviderId = (typeof PROVIDER_IDS)[number];
-export type ImplementedProviderId = "openai" | "anthropic";
+export type ImplementedProviderId = "openai" | "anthropic" | "elevenlabs";
 export type BucketWidth = "1m" | "1h" | "1d";
 export type CacheStatus = "hit" | "miss" | "bypass" | "disabled";
 export type CostSource =
@@ -67,6 +67,7 @@ export interface UsageMetrics {
   output_audio_tokens: number | null;
   request_count: number | null;
   operation_count: number | null;
+  credit_count: number | null;
   image_count: number | null;
   character_count: number | null;
   audio_seconds: number | null;
@@ -125,6 +126,7 @@ export interface DashboardBundle {
     cache_creation_input_tokens: number | null;
     request_count: number | null;
     operation_count: number | null;
+    credit_count: number | null;
   };
   series: {
     cost_by_bucket: unknown[];

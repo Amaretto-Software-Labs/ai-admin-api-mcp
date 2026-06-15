@@ -1,11 +1,13 @@
 import type { ProviderCapability, Warning } from "./core/index.js";
 import { AnthropicProvider } from "./providers/anthropic/index.js";
+import { ElevenLabsProvider } from "./providers/elevenlabs/index.js";
 import { OpenAiProvider } from "./providers/openai/index.js";
 import type { ServerConfig } from "./config.js";
 
 export interface ProviderRegistry {
   openai?: OpenAiProvider;
   anthropic?: AnthropicProvider;
+  elevenlabs?: ElevenLabsProvider;
   capabilities: ProviderCapability[];
 }
 
@@ -31,12 +33,23 @@ export function createProviderRegistry(config: ServerConfig): ProviderRegistry {
     })
     : undefined;
 
+  const elevenlabs = config.enabledProviders.includes("elevenlabs")
+    ? new ElevenLabsProvider({
+      ...(config.elevenlabs.apiKey === undefined ? {} : { apiKey: config.elevenlabs.apiKey }),
+      ...(config.elevenlabs.baseUrl === undefined ? {} : { baseUrl: config.elevenlabs.baseUrl }),
+      required: config.requiredProviders.includes("elevenlabs"),
+      cacheTtlSeconds: config.cacheTtlSeconds,
+    })
+    : undefined;
+
   return {
     ...(openai === undefined ? {} : { openai }),
     ...(anthropic === undefined ? {} : { anthropic }),
+    ...(elevenlabs === undefined ? {} : { elevenlabs }),
     capabilities: [
       ...(openai === undefined ? [] : [openai.capabilities()]),
       ...(anthropic === undefined ? [] : [anthropic.capabilities()]),
+      ...(elevenlabs === undefined ? [] : [elevenlabs.capabilities()]),
       googlePlannedCapability(),
     ],
   };

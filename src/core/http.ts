@@ -9,6 +9,10 @@ export interface HttpRequestOptions {
   fetchImpl?: typeof fetch | undefined;
 }
 
+export interface JsonRequestOptions extends HttpRequestOptions {
+  body?: unknown;
+}
+
 export function buildUrl(baseUrl: string, path: string, query: Record<string, unknown> = {}): URL {
   const url = new URL(path.replace(/^\//, ""), baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`);
 
@@ -33,14 +37,23 @@ export function buildUrl(baseUrl: string, path: string, query: Record<string, un
 }
 
 export async function getJson<T>(options: HttpRequestOptions): Promise<T> {
+  return requestJson<T>("GET", options);
+}
+
+export async function postJson<T>(options: JsonRequestOptions): Promise<T> {
+  return requestJson<T>("POST", options);
+}
+
+async function requestJson<T>(method: "GET" | "POST", options: JsonRequestOptions): Promise<T> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const url = buildUrl(options.baseUrl, options.path, options.query);
   let response: Response;
 
   try {
     response = await fetchImpl(url, {
-      method: "GET",
+      method,
       headers: options.headers,
+      ...(method === "POST" ? { body: JSON.stringify(options.body ?? {}) } : {}),
     });
   } catch (error) {
     throw new AiAdminError("provider_unavailable", safeErrorMessage(error), {
