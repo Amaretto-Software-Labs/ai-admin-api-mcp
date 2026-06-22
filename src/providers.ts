@@ -5,6 +5,7 @@ import type { ServerConfig } from "./config.js";
 import { anthropicProviderPlugin } from "./providers/anthropic/plugin.js";
 import { elevenLabsProviderPlugin } from "./providers/elevenlabs/plugin.js";
 import { openAiProviderPlugin } from "./providers/openai/plugin.js";
+import { openRouterProviderPlugin } from "./providers/openrouter/plugin.js";
 import { isAiAdminProviderPlugin, type AiAdminProviderPlugin, type ProviderRuntime } from "./plugin.js";
 
 export interface ProviderRegistry {
@@ -21,6 +22,7 @@ export const BUILTIN_PROVIDER_PLUGINS: AiAdminProviderPlugin[] = [
   openAiProviderPlugin,
   anthropicProviderPlugin,
   elevenLabsProviderPlugin,
+  openRouterProviderPlugin,
 ];
 
 export function createProviderRegistry(config: ServerConfig, options: ProviderRegistryOptions = {}): ProviderRegistry {

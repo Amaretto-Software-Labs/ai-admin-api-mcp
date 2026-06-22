@@ -9,6 +9,7 @@ Built-in providers:
 - OpenAI Admin API usage, costs, projects, users, and project API keys.
 - Anthropic Admin API organization metadata, workspaces, API keys, messages usage, and costs.
 - ElevenLabs workspace credit usage analytics, API request analytics, audit logs, user/subscription metadata, service accounts, and service-account API keys.
+- OpenRouter management-key analytics, recent activity, credits, API key metadata, generation metadata, and model pricing metadata.
 
 Planned providers:
 
@@ -35,6 +36,7 @@ Run the published package with `npx`:
 OPENAI_ADMIN_KEY=sk-admin-... \
 ANTHROPIC_ADMIN_KEY=sk-ant-admin-... \
 ELEVENLABS_API_KEY=xi-... \
+OPENROUTER_MANAGEMENT_KEY=or-mgmt-... \
 npx @amaretto-software-labs/ai-admin-api-mcp --stdio
 ```
 
@@ -58,6 +60,7 @@ Run over STDIO:
 OPENAI_ADMIN_KEY=sk-admin-... \
 ANTHROPIC_ADMIN_KEY=sk-ant-admin-... \
 ELEVENLABS_API_KEY=xi-... \
+OPENROUTER_MANAGEMENT_KEY=or-mgmt-... \
 pnpm start:stdio
 ```
 
@@ -67,6 +70,7 @@ Run over Streamable HTTP:
 OPENAI_ADMIN_KEY=sk-admin-... \
 ANTHROPIC_ADMIN_KEY=sk-ant-admin-... \
 ELEVENLABS_API_KEY=xi-... \
+OPENROUTER_MANAGEMENT_KEY=or-mgmt-... \
 MCP_HTTP_AUTH_TOKEN=local-proxy-token \
 pnpm start:http
 ```
@@ -79,6 +83,7 @@ Run the gateway-compatible local HTTPS endpoint with a local development certifi
 OPENAI_ADMIN_KEY=sk-admin-... \
 ANTHROPIC_ADMIN_KEY=sk-ant-admin-... \
 ELEVENLABS_API_KEY=xi-... \
+OPENROUTER_MANAGEMENT_KEY=or-mgmt-... \
 MCP_HTTP_AUTH_TOKEN=local-proxy-token \
 MCP_HTTPS_CERT_PATH=/path/to/localhost.pem \
 MCP_HTTPS_KEY_PATH=/path/to/localhost.key \
@@ -94,6 +99,7 @@ MCP_HTTP_AUTH_TOKEN=local-proxy-token \
 OPENAI_ADMIN_KEY=sk-admin-... \
 ANTHROPIC_ADMIN_KEY=sk-ant-admin-... \
 ELEVENLABS_API_KEY=xi-... \
+OPENROUTER_MANAGEMENT_KEY=or-mgmt-... \
 npx @amaretto-software-labs/ai-admin-api-mcp --http --port 8787
 ```
 
@@ -102,6 +108,7 @@ MCP_HTTP_AUTH_TOKEN=local-proxy-token \
 OPENAI_ADMIN_KEY=sk-admin-... \
 ANTHROPIC_ADMIN_KEY=sk-ant-admin-... \
 ELEVENLABS_API_KEY=xi-... \
+OPENROUTER_MANAGEMENT_KEY=or-mgmt-... \
 MCP_HTTPS_CERT_PATH=/path/to/localhost.pem \
 MCP_HTTPS_KEY_PATH=/path/to/localhost.key \
 npx @amaretto-software-labs/ai-admin-api-mcp --https --port 8787
@@ -124,6 +131,11 @@ npx @amaretto-software-labs/ai-admin-api-mcp --https --port 8787
 | `ANTHROPIC_BETA` | No | Comma-separated Anthropic beta headers, for example `fast-mode-2026-02-01`. |
 | `ELEVENLABS_API_KEY` | ElevenLabs static mode | ElevenLabs API key, sent as `xi-api-key`. |
 | `ELEVENLABS_BASE_URL` | No | Override for tests or compatible ElevenLabs API gateways. Defaults to `https://api.elevenlabs.io/v1`. |
+| `OPENROUTER_MANAGEMENT_KEY` | OpenRouter aggregate reporting | OpenRouter management key, sent as bearer auth. Required for credits, activity, analytics, and API key metadata. |
+| `OPENROUTER_API_KEY` | Optional OpenRouter static mode | OpenRouter API key for current-key, generation, and model metadata when no management key is configured. |
+| `OPENROUTER_BASE_URL` | No | Override for tests or compatible OpenRouter API gateways. Defaults to `https://openrouter.ai/api/v1`. |
+| `OPENROUTER_HTTP_REFERER` | No | Optional OpenRouter `HTTP-Referer` attribution header. |
+| `OPENROUTER_APP_TITLE` | No | Optional OpenRouter `X-Title` attribution header. |
 | `MCP_HTTP_AUTH_TOKEN` | HTTP mode | Bearer token required by the MCP HTTP endpoint unless unsafe local mode is used. |
 | `MCP_HTTPS_CERT_PATH` | HTTPS mode | PEM certificate path for local HTTPS. |
 | `MCP_HTTPS_KEY_PATH` | HTTPS mode | PEM private-key path for local HTTPS. |
@@ -139,6 +151,9 @@ In v0.1 static mode, these credential refs are accepted:
 - `credential:openai:static`
 - `credential:anthropic:static`
 - `credential:elevenlabs:static`
+- `credential:openrouter:static`
+- `credential:openrouter:management`
+- `credential:openrouter:api`
 
 Omit `credential_ref` to use the static provider credential. Unknown refs are rejected.
 
@@ -199,6 +214,21 @@ ElevenLabs tools:
 - `elevenlabs_admin_query_usage`
 - `elevenlabs_admin_query_dashboard_bundle`
 
+OpenRouter tools:
+
+- `openrouter_admin_get_current_key`
+- `openrouter_admin_list_api_keys`
+- `openrouter_admin_get_api_key`
+- `openrouter_admin_get_credits`
+- `openrouter_admin_get_activity`
+- `openrouter_admin_get_analytics_meta`
+- `openrouter_admin_query_analytics`
+- `openrouter_admin_get_generation`
+- `openrouter_admin_list_models`
+- `openrouter_admin_query_usage`
+- `openrouter_admin_query_costs`
+- `openrouter_admin_query_dashboard_bundle`
+
 ## Resources and Prompts
 
 Resources:
@@ -212,6 +242,7 @@ Resources:
 - `openai-admin://capabilities`
 - `anthropic-admin://capabilities`
 - `elevenlabs-admin://capabilities`
+- `openrouter-admin://capabilities`
 
 External provider plugins can register their own tools and resources.
 
@@ -227,6 +258,7 @@ Prompts:
 - Anthropic costs are reported in minor units and normalized to USD major units. Priority Tier costs are not included in the Anthropic cost endpoint.
 - Anthropic `speed` usage filters/groupings require `ANTHROPIC_BETA=fast-mode-2026-02-01`.
 - ElevenLabs workspace analytics reports credit usage. The provider exposes `credit_count`; provider-reported monetary cost is not available from the implemented endpoint.
+- OpenRouter aggregate reporting requires `OPENROUTER_MANAGEMENT_KEY`. Analytics metadata/query endpoints are beta, activity is limited to the provider-supported completed UTC-day window, and generation metadata is a point lookup. OpenRouter spend values are normalized as `openrouter_credit` until USD semantics are confirmed.
 - Google Cloud Billing support is planned only. BigQuery queries against billing export tables can be cost-bearing.
 
 ## MCP Client Example
@@ -240,7 +272,8 @@ Prompts:
       "env": {
         "OPENAI_ADMIN_KEY": "sk-admin-...",
         "ANTHROPIC_ADMIN_KEY": "sk-ant-admin-...",
-        "ELEVENLABS_API_KEY": "xi-..."
+        "ELEVENLABS_API_KEY": "xi-...",
+        "OPENROUTER_MANAGEMENT_KEY": "or-mgmt-..."
       }
     }
   }
@@ -255,6 +288,7 @@ docker run --rm -p 8787:8787 \
   -e OPENAI_ADMIN_KEY \
   -e ANTHROPIC_ADMIN_KEY \
   -e ELEVENLABS_API_KEY \
+  -e OPENROUTER_MANAGEMENT_KEY \
   -e MCP_HTTP_AUTH_TOKEN \
   ai-admin-api-mcp
 ```
@@ -268,6 +302,7 @@ pnpm check
 pnpm test
 pnpm test:live:openai
 pnpm test:live:anthropic
+pnpm test:live:openrouter
 ```
 
 Live tests are skipped unless provider credentials are present.

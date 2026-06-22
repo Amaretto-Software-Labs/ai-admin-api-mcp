@@ -8,6 +8,8 @@
 - Added ElevenLabs Admin provider support for workspace credit usage analytics, API request analytics, audit logs, user/subscription metadata, and service-account API key inventory.
 - Added normalized `credit_count` usage metrics and dashboard summaries.
 - Documented that the ElevenLabs provider reports credit usage, not provider-reported monetary cost.
+- Added OpenRouter Admin provider support for management-key analytics, recent activity, credits, API key metadata, generation metadata, and model pricing metadata.
+- Documented that OpenRouter analytics is beta, activity is limited to the provider-supported completed UTC-day window, and OpenRouter spend fields are normalized as `openrouter_credit` until USD semantics are confirmed.
 
 ## 0.1.0
 

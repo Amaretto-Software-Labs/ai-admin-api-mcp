@@ -1,4 +1,4 @@
-export const PROVIDER_IDS = ["openai", "anthropic", "elevenlabs", "google-cloud-billing"] as const;
+export const PROVIDER_IDS = ["openai", "anthropic", "elevenlabs", "openrouter", "google-cloud-billing"] as const;
 
 export type BuiltinProviderId = (typeof PROVIDER_IDS)[number];
 export type ProviderId = string;

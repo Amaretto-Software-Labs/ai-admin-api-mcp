@@ -23,6 +23,13 @@ export interface ServerConfig {
     apiKey?: string;
     baseUrl?: string;
   };
+  openrouter: {
+    managementKey?: string;
+    apiKey?: string;
+    baseUrl?: string;
+    httpReferer?: string;
+    appTitle?: string;
+  };
   httpAuthToken?: string;
   cacheTtlSeconds: number;
   userAgent?: string;
@@ -39,6 +46,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   const anthropicVersion = optionalString(env.ANTHROPIC_VERSION);
   const elevenLabsApiKey = optionalString(env.ELEVENLABS_API_KEY);
   const elevenLabsBaseUrl = optionalString(env.ELEVENLABS_BASE_URL);
+  const openRouterManagementKey = optionalString(env.OPENROUTER_MANAGEMENT_KEY);
+  const openRouterApiKey = optionalString(env.OPENROUTER_API_KEY);
+  const openRouterBaseUrl = optionalString(env.OPENROUTER_BASE_URL);
+  const openRouterHttpReferer = optionalString(env.OPENROUTER_HTTP_REFERER);
+  const openRouterAppTitle = optionalString(env.OPENROUTER_APP_TITLE);
   const httpAuthToken = optionalString(env.MCP_HTTP_AUTH_TOKEN);
   const userAgent = optionalString(env.MCP_USER_AGENT);
 
@@ -62,6 +74,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     elevenlabs: {
       ...(elevenLabsApiKey === undefined ? {} : { apiKey: elevenLabsApiKey }),
       ...(elevenLabsBaseUrl === undefined ? {} : { baseUrl: elevenLabsBaseUrl }),
+    },
+    openrouter: {
+      ...(openRouterManagementKey === undefined ? {} : { managementKey: openRouterManagementKey }),
+      ...(openRouterApiKey === undefined ? {} : { apiKey: openRouterApiKey }),
+      ...(openRouterBaseUrl === undefined ? {} : { baseUrl: openRouterBaseUrl }),
+      ...(openRouterHttpReferer === undefined ? {} : { httpReferer: openRouterHttpReferer }),
+      ...(openRouterAppTitle === undefined ? {} : { appTitle: openRouterAppTitle }),
     },
     ...(httpAuthToken === undefined ? {} : { httpAuthToken }),
     cacheTtlSeconds: parsePositiveInt(env.MCP_CACHE_TTL_SECONDS, 60),

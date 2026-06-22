@@ -7,6 +7,7 @@ Built-in providers use the same plugin contract as external providers:
 - `openai`
 - `anthropic`
 - `elevenlabs`
+- `openrouter`
 
 ## Configure
 
